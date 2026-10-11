@@ -4,6 +4,13 @@ Gemini makes **one image per message**, so each prompt below asks for **one
 image that contains several pieces in a grid** (a sprite sheet). I'll cut the
 sheets apart, remove the backgrounds and put everything into the game.
 
+## Rules these prompts follow
+
+- Each prompt says exactly what shape to draw and lists what must not appear
+  (faces, creatures, text). Gemini copies the subject from earlier images if
+  you only say "same style".
+- So "same style" means the painting style only, never the subject.
+
 ## How to do it
 
 1. Open **one** Gemini chat and keep using it for every prompt, so the style
@@ -37,18 +44,22 @@ Style: hand-painted 2D mobile game art, dark fantasy, highly detailed, painterly
 ## Prompt 2: Wyrm body segments → `sheet2_bodies.png`
 
 ```
-Same art style as the heads above. Create one image: a 2 by 2 sprite sheet of four single body segments for the same four serpents, each segment seen from the side facing RIGHT. Each segment is ONE compact, roughly round chunk of armored body (not a whole snake), about as tall as it is wide, with one sharp back-swept spike on top and pale ridged belly scales on the bottom, designed to overlap in a chain.
-Top left: fire dragon segment, dark crimson armor plates with glowing lava cracks, black spike.
-Top right: ice drake segment, frost-white and steel-blue plates, ice-crystal spike.
-Bottom left: bone wyrm segment, ivory vertebra and ribs wrapped in dark sinew, bone spike, faint green ghost-fire between the bones.
-Bottom right: sea serpent segment, navy and teal scales with glowing cyan lines, spined fin on top.
-Each segment fully separated with lots of empty space between them, plain solid white background (not transparent, no checkerboard), no text, no labels, no borders.
+Use the same painting style, colors and rendering as the dragon heads above, but this image must contain NO heads, NO faces, NO eyes, NO mouths, NO teeth and NO skulls.
+Create one image: a 2 by 2 sprite sheet of four short, straight pieces of serpent BODY, as if cut from the middle of each serpent's long body. Each piece is a thick horizontal cylinder lying on its side, like a short log of armor, seen from the side, roughly as tall as it is wide. Both the left end and the right end are cut off straight and plain: no head, no tail, no limbs. A row of overlapping armor scales and back-swept spikes runs along the top edge, and pale segmented belly plates run along the bottom edge.
+Top left: fire dragon body piece, dark crimson rock-like scales with glowing orange lava cracks, black spikes on top.
+Top right: ice drake body piece, frost-white and steel-blue scales, jagged blue ice-crystal spikes on top.
+Bottom left: undead body piece, a section of spine: ivory vertebrae and curved ribs wrapped in dark sinew, faint green ghost-fire between the bones, no skull.
+Bottom right: sea serpent body piece, navy and teal scales with glowing cyan bioluminescent lines, a spined fin along the top.
+Each piece fully separated with lots of empty space between them, plain solid white background (not transparent, no checkerboard), no text, no labels, no borders, no shadows.
 ```
+
+If any piece still has a face, reply: "Remove every face, eye and mouth. These
+are plain body pieces with both ends cut flat, like logs."
 
 ## Prompt 3: Heroes → `sheet3_heroes.png`
 
 ```
-Same art style. Create one image: a 3 by 2 sprite sheet of six chibi heroic fantasy heroes for a mobile game, big expressive heads, detailed armor, full body standing, three-quarter front view, premium gacha game quality.
+Same art style. Use the same painting style and rendering as before, but these are people, not dragons: no dragons, no creatures, no background scenery. Create one image: a 3 by 2 sprite sheet of six chibi heroic fantasy heroes for a mobile game, big expressive heads, detailed armor, full body standing, three-quarter front view, premium gacha game quality.
 Top row, left to right: 1) viking warrior with horned helmet, braided red beard, fur and steel armor, huge double-bladed battle axe. 2) fire mage, young sorceress in purple and gold robes with tall pointed hat, staff with a blazing fire crystal. 3) elf ranger in a green hood and leather armor drawing an ornate longbow, quiver on her back.
 Bottom row, left to right: 4) holy priestess in white and gold robes with a radiant halo, golden sun mace and glowing holy book. 5) hooded rogue assassin with a dark mask, black and crimson leather armor, twin curved daggers dripping green poison. 6) warlock with small demon horns, dark violet robes with skull ornaments, green fel fire swirling around one hand.
 Each hero fully separated with lots of empty space between them, plain solid white background (not transparent, no checkerboard), no text, no labels, no borders, no ground shadows.
@@ -57,7 +68,7 @@ Each hero fully separated with lots of empty space between them, plain solid whi
 ## Prompt 4: Orbs and projectiles → `sheet4_items.png`
 
 ```
-Same art style. Create one image: a 4 by 2 sprite sheet of eight game items, each centered in its own cell.
+Use the same painting style and rendering as before, but draw only objects: no creatures, no faces, no hands holding them. Create one image: a 4 by 2 sprite sheet of eight separate game items, each one alone and centered in its own cell.
 Top row, left to right: 1) glowing sapphire orb in a dark iron cage of claws with a bright white star rune inside. 2) glowing golden orb in a dark iron cage of claws with a radiant crown symbol inside. 3) a single spinning steel throwing axe. 4) a single steel throwing dagger pointing straight up.
 Bottom row, left to right: 5) a single arrow pointing straight up with green fletching. 6) a blazing fireball. 7) a radiant golden-white holy light bolt shaped like a star. 8) a swirling dark violet shadow bolt with green sparks.
 Each item fully separated with lots of empty space, plain solid white background (not transparent, no checkerboard), no text, no labels, no borders.
@@ -66,7 +77,7 @@ Each item fully separated with lots of empty space, plain solid white background
 ## Prompt 5: Defenses → `sheet5_defenses.png`
 
 ```
-Same art style. Create one image with three game sprites stacked vertically with lots of empty space between them:
+Use the same painting style and rendering as before, but draw only buildings and objects: no creatures, no people, no dragons. Create one image with three separate game sprites stacked vertically with lots of empty space between them:
 Top: a long horizontal fortified stone castle rampart wall, front view, crenellations and a reinforced wooden gate in the middle, battle-worn, spanning the full width of the image.
 Middle: a fantasy war wagon cart, front view, spiked wooden sides, iron-banded wheels and a small banner, flat empty platform on top.
 Bottom: a circular ring of carved runestones glowing teal, seen from directly above, empty center.
@@ -80,22 +91,22 @@ reply "Make it tall portrait, 9:16."
 
 **6 → `bg_ember.png`**
 ```
-Same art style. Create one tall portrait (9:16) mobile game background: a top-down view looking straight down at a scorched desert canyon floor used as a battlefield. Cracked orange sandstone ground, glowing lava fissures, rocks and canyon cliffs along the left and right edges, a wide open flat area in the middle. Warm dramatic lighting, hand-painted, no characters, no creatures, no text.
+Use the same painting style as before. Create one tall portrait (9:16) mobile game background with NO creatures, NO dragons, NO people and NO text: a top-down view looking straight down at a scorched desert canyon floor used as a battlefield. Cracked orange sandstone ground, glowing lava fissures, rocks and canyon cliffs along the left and right edges, a wide open flat area in the middle. Warm dramatic lighting, hand-painted, no characters, no creatures, no text.
 ```
 
 **7 → `bg_frost.png`**
 ```
-Same art style. Create one tall portrait (9:16) mobile game background: a top-down view looking straight down at a frozen ice temple floor used as a battlefield. Polished blue ice tiles with a faint ancient rune circle, frosted pillars and snowdrifts along the left and right edges, a wide open flat area in the middle. Cold blue lighting, hand-painted, no characters, no creatures, no text.
+Use the same painting style as before. Create one tall portrait (9:16) mobile game background with NO creatures, NO dragons, NO people and NO text: a top-down view looking straight down at a frozen ice temple floor used as a battlefield. Polished blue ice tiles with a faint ancient rune circle, frosted pillars and snowdrifts along the left and right edges, a wide open flat area in the middle. Cold blue lighting, hand-painted, no characters, no creatures, no text.
 ```
 
 **8 → `bg_crypt.png`**
 ```
-Same art style. Create one tall portrait (9:16) mobile game background: a top-down view looking straight down at an ancient crypt floor used as a battlefield. Dark cracked flagstones, scattered bones, candles and broken tombs along the left and right edges, eerie green ghost-light, a wide open flat area in the middle. Hand-painted, no characters, no creatures, no text.
+Use the same painting style as before. Create one tall portrait (9:16) mobile game background with NO creatures, NO dragons, NO people and NO text: a top-down view looking straight down at an ancient crypt floor used as a battlefield. Dark cracked flagstones, scattered bones, candles and broken tombs along the left and right edges, eerie green ghost-light, a wide open flat area in the middle. Hand-painted, no characters, no creatures, no text.
 ```
 
 **9 → `bg_abyss.png`**
 ```
-Same art style. Create one tall portrait (9:16) mobile game background: a top-down view looking straight down at a sunken abyssal sea floor used as a battlefield. Dark teal sand, sunken ruins, glowing coral and seaweed along the left and right edges, light rays and bubbles, a wide open flat area in the middle. Hand-painted, no characters, no creatures, no text.
+Use the same painting style as before. Create one tall portrait (9:16) mobile game background with NO creatures, NO dragons, NO people and NO text: a top-down view looking straight down at a sunken abyssal sea floor used as a battlefield. Dark teal sand, sunken ruins, glowing coral and seaweed along the left and right edges, light rays and bubbles, a wide open flat area in the middle. Hand-painted, no characters, no creatures, no text.
 ```
 
 **10 → `bg_menu.png`**
