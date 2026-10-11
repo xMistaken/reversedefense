@@ -86,6 +86,25 @@ Bottom right: sea serpent collar, navy and teal shell plates with glowing cyan e
 Each collar fully separated with lots of empty space between them, plain solid white background (not transparent, no checkerboard), no text, no labels, no borders, no shadows.
 ```
 
+### Prompt 2f: Round collar rings → `sheet2f_rings.png` (replaces 2c)
+
+The 2c cuffs had a belly lip and an open rim that stuck out on bends.
+These rounded rings look the same at any angle.
+
+```
+Use the same painting style, colors and rendering as the serpent body pieces above. This image must contain NO heads, NO faces, NO eyes, NO mouths, NO teeth and NO skulls.
+Create one image: a 2 by 2 sprite sheet of four armor RINGS seen from the side. Each ring is a single short band of overlapping dragon scales, much taller than it is wide (about three times taller than wide), shaped like a rounded bead: its left and right edges are smooth convex curves, so it bulges gently outward in the middle and narrows at the top and bottom. Nothing sticks out past its outline: no belly lip, no open hollow, no rim, no flat cut ends. One small back-swept spike sits on the very top.
+Top left: fire dragon ring, blackened rock-like scales with glowing orange lava seams.
+Top right: ice drake ring, steel-blue scales edged with small blue ice crystals.
+Bottom left: undead ring, a single ivory vertebra with short ribs curving down, faint green ghost-fire in the gaps.
+Bottom right: sea serpent ring, navy and teal scales with glowing cyan edges.
+Each ring fully separated with lots of empty space between them, plain solid white background (not transparent, no checkerboard), no text, no labels, no borders, no shadows.
+```
+
+If Gemini draws long tubes, reply: "Draw each one as a tall upright oval
+shield made of overlapping dragon scales, three times taller than wide,
+seen from the side."
+
 ### Prompt 2d: Orb sockets (chest sections) → `sheet2d_sockets.png`
 
 ```

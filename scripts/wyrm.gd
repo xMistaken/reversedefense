@@ -32,8 +32,8 @@ const ORB_SCALE := 0.42       # sized to sit in the socket's hole
 const TAPER_PLATES := 4       # rearmost plates that narrow into the tail
 const TAPER_MIN := 0.75       # body height at the very end, as a share of BODY_HEIGHT
 const TAIL_OVERLAP_PLATES := 3.0  # how far the tail's faded end reaches over the body
-const COLLAR_SQUEEZE := 0.6   # collars drawn narrower than painted: a band, not a cuff
-const COLLAR_HEIGHT := 0.88   # collars stand slightly proud of the body
+const COLLAR_SQUEEZE := 1.0   # horizontal squash of the collar art
+const COLLAR_HEIGHT := 0.9   # collars stand slightly proud of the body
 
 ## A section of the body: several plates sharing one HP pool.
 class Segment:

@@ -198,11 +198,9 @@ def main() -> None:
     sheet("sheet2_bodies", [f"body_{t}" for t in THEMES], "wyrm", merge=10, width=900, crop_x=(0.02, 0.86))
     for t in THEMES:
         make_seamless(OUT / "wyrm" / f"body_{t}.png")
-    # Collars sit over the seams between sections. Drop the open rim on the
-    # right (they're drawn as cuffs) and soften that edge.
-    sheet("sheet2c_collars", [f"collar_{t}" for t in THEMES], "wyrm", merge=10, height=300, crop_x=(0.0, 0.76))
-    for t in THEMES:
-        fade_right(OUT / "wyrm" / f"collar_{t}.png", 0.18)
+    # Collars: rounded armor rings over the seams between sections. Trim the
+    # thin side rim on the right.
+    sheet("sheet2f_rings", [f"collar_{t}" for t in THEMES], "wyrm", merge=10, height=300, crop_x=(0.0, 0.88))
     # Chest sections: a body log with an empty socket for the orb. Cut off the
     # meat caps, then keep a window around the socket.
     sheet("sheet2d_sockets", [f"socket_{t}" for t in THEMES], "wyrm", merge=10, height=300, crop_x=(0.06, 0.94))
