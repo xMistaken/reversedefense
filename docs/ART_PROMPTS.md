@@ -128,6 +128,16 @@ Same art style. Create one tall portrait (9:16) title-screen illustration for a 
 
 ---
 
+## Prompt 11: UI pieces → `sheet6_ui.png`
+
+```
+Use the same painting style and rendering as before, but draw only user-interface pieces for a fantasy mobile game: no creatures, no people, no text, no letters, no icons inside the buttons.
+Create one image: a sprite sheet of six separate UI pieces with lots of empty space between them, each one front-facing and perfectly flat-on (no perspective, no tilt):
+Top row: 1) a wide horizontal rounded button with an ornate gold metal rim and a glossy orange-amber center, the center plain and empty. 2) the same wide button but with a glossy royal-blue center. 3) the same wide button but dull grey stone, for a disabled state.
+Bottom row: 4) a large empty rectangular panel frame of dark carved wood with gold corner ornaments and a plain dark purple center. 5) a hexagonal dark iron button with a gold rim and an empty center. 6) a long empty horizontal health-bar frame of dark iron with gold end caps and an empty dark interior.
+Plain solid white background (not transparent, no checkerboard), no text, no labels, no borders, no shadows.
+```
+
 ## Notes
 
 - **If Gemini refuses or stops:** shorten the prompt by removing one or two
@@ -135,8 +145,6 @@ Same art style. Create one tall portrait (9:16) title-screen illustration for a 
   changed.
 - **If pieces touch or overlap:** reply "Spread them out more, with lots of
   white space between each one."
-- **UI:** I'll use Ravenmore's free hand-painted fantasy UI, so you don't need
-  to generate buttons or frames.
 - **Licensing:** check Google's current Gemini terms for commercial use of
   generated images before publishing. Gemini images also carry an invisible
   SynthID watermark, which doesn't affect the game.
