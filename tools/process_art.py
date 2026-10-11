@@ -126,6 +126,25 @@ def save(rgba: np.ndarray, box, path: Path, width: int = 0, height: int = 0, cro
     print(f"  {path.relative_to(ROOT)}  {img.size}")
 
 
+def make_joint(body_path: Path, out_path: Path) -> None:
+    """A soft armored ridge between body sections: a slice of the (seamless)
+    body art, darkened, with feathered edges and its faint haze removed."""
+    a = np.asarray(Image.open(body_path).convert("RGBA")).astype(np.float32)
+    h, w, _ = a.shape
+    period = w / (1 + 2 * BODY_PAD)
+    width = int(period * 0.2)
+    x0 = int(w / 2 - width / 2)
+    j = a[:, x0:x0 + width].copy()
+    alpha = j[..., 3] / 255.0
+    alpha[alpha < 0.55] = 0.0  # drop glow/haze so the ring is just armor
+    profile = np.clip(np.sin(np.linspace(0, np.pi, width, dtype=np.float32)), 0, 1) ** 0.8
+    alpha *= profile[None, :]
+    shade = 0.64 + 0.2 * (1 - profile)[None, :, None]  # darkest in the middle
+    j[..., :3] *= shade
+    j[..., 3] = alpha * 255.0
+    Image.fromarray(np.clip(j, 0, 255).astype(np.uint8), "RGBA").save(out_path)
+
+
 def fade_right(path: Path, share: float = 0.2) -> None:
     """Fade the right end of an image to transparent (tail joins the body)."""
     a = np.asarray(Image.open(path).convert("RGBA")).astype(np.float32)
@@ -177,6 +196,7 @@ def main() -> None:
     sheet("sheet2_bodies", [f"body_{t}" for t in THEMES], "wyrm", merge=10, width=900, crop_x=(0.02, 0.86))
     for t in THEMES:
         make_seamless(OUT / "wyrm" / f"body_{t}.png")
+        make_joint(OUT / "wyrm" / f"body_{t}.png", OUT / "wyrm" / f"joint_{t}.png")
     # Tails: drop the hollow cut end, then fade the join so it blends into the body.
     sheet("sheet2b_tails", [f"tail_{t}" for t in THEMES], "wyrm", merge=10, width=520, crop_x=(0.0, 0.93))
     for t in THEMES:

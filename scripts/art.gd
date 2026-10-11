@@ -38,21 +38,25 @@ const WYRMS := {
 		"head": preload("res://assets/art/wyrm/head_ember.png"),
 		"body": preload("res://assets/art/wyrm/body_ember.png"),
 		"tail": preload("res://assets/art/wyrm/tail_ember.png"),
+		"joint": preload("res://assets/art/wyrm/joint_ember.png"),
 	},
 	"frost": {
 		"head": preload("res://assets/art/wyrm/head_frost.png"),
 		"body": preload("res://assets/art/wyrm/body_frost.png"),
 		"tail": preload("res://assets/art/wyrm/tail_frost.png"),
+		"joint": preload("res://assets/art/wyrm/joint_frost.png"),
 	},
 	"crypt": {
 		"head": preload("res://assets/art/wyrm/head_crypt.png"),
 		"body": preload("res://assets/art/wyrm/body_crypt.png"),
 		"tail": preload("res://assets/art/wyrm/tail_crypt.png"),
+		"joint": preload("res://assets/art/wyrm/joint_crypt.png"),
 	},
 	"abyss": {
 		"head": preload("res://assets/art/wyrm/head_abyss.png"),
 		"body": preload("res://assets/art/wyrm/body_abyss.png"),
 		"tail": preload("res://assets/art/wyrm/tail_abyss.png"),
+		"joint": preload("res://assets/art/wyrm/joint_abyss.png"),
 	},
 }
 

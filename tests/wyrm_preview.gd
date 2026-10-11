@@ -26,7 +26,7 @@ func _ready() -> void:
 		holder.add_child(w)
 		var curve := TrackBuilder.serpentine(150, 930, 380, 300, 4, true)
 		var types: Array[String] = []
-		for k in 14:
+		for k in 10:
 			types.append("skill_chest" if k == 3 else ("hero_chest" if k == 7 else ("bone" if k == 5 else "flesh")))
 		w.setup(curve, types, 100.0, 0.1)
 		w.base_speed = 120.0

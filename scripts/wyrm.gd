@@ -30,13 +30,14 @@ const HEAD_SCALE := 0.5
 const TAIL_SCALE_MUL := 1.7  # tail art scale relative to the body art
 const ORB_SCALE := 0.52
 const TAPER_PLATES := 4       # rearmost plates that narrow into the tail
+const JOINT_SCALE_Y := 1.12   # joint rings stand slightly proud of the body
 
 ## A section of the body: several plates sharing one HP pool.
 class Segment:
 	var id := 0
 	var type := "flesh"
 	var plates := 6
-	var first_plate := 0       # index of this section's front plate in the whole body (texture slicing)
+	var first_plate := 0       # random starting slice in the body art, so sections don't look identical
 	var hp := 1.0
 	var max_hp := 1.0
 	var armor := 0.0
@@ -97,19 +98,17 @@ func setup(track: Curve2D, types: Array[String], base_hp: float, hp_growth: floa
 	intro_distance = TrackBuilder.ENTRY + 300.0
 	segments.clear()
 	var back := -HEAD_GAP
-	var plate_count := 0
 	for i in types.size():
 		var s := Segment.new()
 		s.id = i
 		s.type = types[i]
 		var def: Dictionary = Data.SEGMENTS[s.type]
-		s.plates = ORB_PLATES if s.is_orb() else 5 + randi() % 3
+		s.plates = ORB_PLATES if s.is_orb() else 8 + randi() % 4
 		s.max_hp = round(base_hp * (1.0 + i * hp_growth) * def.hp_mul)
 		s.hp = s.max_hp
 		s.armor = def.armor
 		s.offset = back
-		s.first_plate = plate_count
-		plate_count += s.plates
+		s.first_plate = randi() % 1000
 		back -= s.length()
 		s.plate_pos.resize(s.plates)
 		s.plate_angle.resize(s.plates)
@@ -269,6 +268,10 @@ func _draw() -> void:
 		var s := segments[i]
 		if s.plate_visible[0]:
 			_draw_section(s)
+	# Armored joint rings between sections, on top so they hide the seams.
+	for i in range(segments.size() - 1, 0, -1):
+		if segments[i].plate_visible[0]:
+			_draw_joint(segments[i])
 	# The tail goes on top: its faded thick end blends over the last plates.
 	if not segments.is_empty():
 		_draw_tail(segments[-1])
@@ -338,6 +341,18 @@ func _draw_section(s: Segment) -> void:
 		Art.draw_sprite(self, Art.FX.glow, s.plate_pos[1], 1.0 * pulse, 0.0,
 			Color(1, 0.7, 0.2, 0.5) if s.type == "hero_chest" else Color(0.3, 0.6, 1, 0.5))
 		Art.draw_sprite(self, orb, s.plate_pos[1], ORB_SCALE * pulse, 0.0, Color(1.6, 1.6, 1.6) if s.flash > 0.0 else Color.WHITE)
+
+
+## A raised, darker ring of armor at the front of a section, marking where
+## one HP section ends and the next begins.
+func _draw_joint(s: Segment) -> void:
+	var tex: Texture2D = skin.joint
+	var sc := BODY_HEIGHT / (skin.body as Texture2D).get_height()
+	var a := s.plate_angle[0]
+	var pos := s.plate_pos[0] + Vector2.from_angle(a) * PLATE_SPACING * 0.5
+	var flip := _body_flip(s.plate_angle[s.plates / 2])
+	var sy := sc * JOINT_SCALE_Y
+	Art.draw_region(self, tex, Rect2(Vector2.ZERO, tex.get_size()), pos, Vector2(sc, -sy if flip else sy), a, _section_tint(s))
 
 
 func _draw_tail(last: Segment) -> void:
