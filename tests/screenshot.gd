@@ -23,6 +23,8 @@ func _ready() -> void:
 	Meta.highest_cleared = 14
 	Meta.hero_levels = {"warrior": 9, "mage": 7, "hunter": 6, "priest": 5, "rogue": 6, "warlock": 5}
 	Meta.armory = {"might": 6, "haste": 4, "ferocity": 3, "fortune": 2, "insight": 1, "treasure": 1}
+	Meta.hero_ranks = {"warrior": 6, "mage": 3, "hunter": 2}
+	Meta.hero_shards = {"warrior": 0, "mage": 9, "hunter": 3, "priest": 4}
 	_main = load("res://scenes/main.tscn").instantiate()
 	add_child(_main)
 
@@ -53,16 +55,16 @@ func _process(_delta: float) -> void:
 		0:
 			if _frames == 20:
 				await _shot("home")
-				_main.show_upgrades()
+				_main.show_hero("warrior")
 				_next_step()
 		1:
 			if _frames == 10:
-				await _shot("upgrades")
-				_main.show_stage_select()
+				await _shot("hero")
+				_main.show_heroes()
 				_next_step()
 		2:
 			if _frames == 10:
-				await _shot("stages")
+				await _shot("heroes")
 				_main.start_stage(13)
 				_next_step()
 		3:

@@ -130,8 +130,12 @@ func _record() -> void:
 		_spend_gold()
 
 
-## Greedy: keep buying the cheapest affordable upgrade.
+## Greedy: rank up any hero with enough shards, then keep buying the
+## cheapest affordable gold upgrade.
 func _spend_gold() -> void:
+	for id in Data.HEROES:
+		while Meta.rank_up(id):
+			pass
 	while true:
 		var best_cost := INF
 		var best: Callable

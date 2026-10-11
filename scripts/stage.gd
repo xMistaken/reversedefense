@@ -66,6 +66,12 @@ var _shake := 0.0
 var _time := 0.0
 var _wall_flash := 0.0
 var _recoil: Dictionary = {}  # hero id -> seconds of firing pose left
+var _ult_timers: Dictionary = {}  # hero id -> seconds until the ultimate fires
+var _banner := ""
+var _banner_t := 0.0
+var _banner_color := Color.WHITE
+var _flash := 0.0
+var _flash_color := Color.WHITE
 var _pick: PickPanel
 var _title_label: Label
 var _progress_label: Label
@@ -141,6 +147,8 @@ func _refresh_stats() -> void:
 		if not _fire_timers.has(h):
 			_fire_timers[h] = 0.2
 			_push_timers[h] = _stats[h].push_interval
+		if run.has_ultimate(h) and not _ult_timers.has(h):
+			_ult_timers[h] = Data.ULTIMATES[h].interval * 0.6
 	wyrm.speed_mul = run.global_stat("wyrm_speed")
 	_update_hud()
 
@@ -190,6 +198,13 @@ func _process(delta: float) -> void:
 	for h in _recoil:
 		_recoil[h] = maxf(0.0, _recoil[h] - delta)
 	_wall_flash = maxf(0.0, _wall_flash - delta)
+	_banner_t = maxf(0.0, _banner_t - delta)
+	_flash = maxf(0.0, _flash - delta * 2.5)
+	for h in _ult_timers:
+		_ult_timers[h] -= delta
+		if _ult_timers[h] <= 0.0:
+			_ult_timers[h] = Data.ULTIMATES[h].interval
+			_cast_ultimate(h)
 
 	for h in run.party:
 		var s: Dictionary = _stats[h]
@@ -367,6 +382,56 @@ func _on_segment_destroyed(seg: Wyrm.Segment) -> void:
 	_update_hud()
 
 
+## Rank-6 hero ultimates: big screen-wide attacks.
+func _cast_ultimate(h: String) -> void:
+	var u: Dictionary = Data.ULTIMATES[h]
+	var s: Dictionary = _stats[h]
+	var hit: float = s.damage * s.power
+	var targets: Array[Wyrm.Segment] = []
+	for seg in wyrm.segments:
+		if seg.on_track():
+			targets.append(seg)
+	if targets.is_empty():
+		return
+	_banner = Data.HERO_RANKS[h][Data.HERO_MAX_RANK - 1].name
+	_banner_t = 1.4
+	_banner_color = u.color
+	_flash = 0.6
+	_flash_color = u.color
+	_shake = 1.0
+	Sfx.play("legendary", -2.0)
+	if u.has("hits"):
+		# Strikes on random sections (meteors / shadow strikes).
+		for i in u.hits:
+			var seg: Wyrm.Segment = targets[randi() % targets.size()]
+			if not seg.alive:
+				continue
+			var dmg: float = hit * u.mult * (s.crit_mult if u.get("crit", false) else 1.0)
+			var pos: Vector2 = seg.plate_pos[randi() % seg.plates]
+			_add_effect("flame" if h == "mage" else "slash", pos, 0.4, 1.8, u.color, 0.5, randf() * TAU, 3.0)
+			_add_effect("glow", pos, 0.3, 2.4, u.color, 0.4)
+			var dealt := wyrm.damage(seg, dmg)
+			biggest_hit = maxf(biggest_hit, dealt)
+			_add_number(pos, dealt, u.get("crit", false))
+			if h == "mage":
+				for other in wyrm.segments.duplicate():
+					if other != seg and other.alive and other.hit_test(pos, 160.0):
+						wyrm.damage(other, dmg * 0.5)
+		return
+	# Everything on screen.
+	for seg in targets:
+		if not seg.alive:
+			continue
+		if u.get("curse", false):
+			wyrm.apply_dot(seg, maxf(s.dot, 6.0) * s.power, 0)
+		var dealt := wyrm.damage(seg, hit * u.mult)
+		biggest_hit = maxf(biggest_hit, dealt)
+		_add_number(seg.pos, dealt, false)
+		_add_effect("light" if h == "priest" else "burst", seg.pos, 0.4, 1.6, u.color, 0.45, randf() * TAU, 3.0)
+	if u.has("repair"):
+		wall_hp = minf(wall_max, wall_hp + wall_max * u.repair)
+
+
 func _chest_burst(pos: Vector2, col: Color) -> void:
 	_add_effect("light", pos, 0.5, 4.0, col, 0.5)
 	_add_effect("star", pos, 0.4, 1.8, Color(1, 0.9, 0.5), 0.45, 0.0, 4.0)
@@ -461,7 +526,10 @@ func _end(victory: bool) -> void:
 	_pick.visible = false
 	_pause_panel.visible = false
 	get_tree().paused = true
-	reward = Meta.finish_run(stage_number, victory, run.gold)
+	var shard_party: Array[String] = []
+	if use_meta:
+		shard_party = run.party
+	reward = Meta.finish_run(stage_number, victory, run.gold, shard_party)
 	Sfx.play("legendary" if victory else "armor")
 	Sfx.play("coins", -4.0)
 	var lines: Array[String] = []
@@ -476,6 +544,8 @@ func _end(victory: bool) -> void:
 	lines.append("Gold earned: %s" % Meta.fmt(reward.total))
 	if reward.first_clear:
 		lines.append("First clear bonus x3!")
+	if use_meta:
+		lines.append("+%d hero shards for each party member" % reward.shards)
 	if not victory:
 		lines.append("Spend gold on upgrades and try again!")
 	_end_label.text = "\n".join(lines)
@@ -731,3 +801,18 @@ func _draw_fx(c: CanvasItem) -> void:
 		var pos: Vector2 = n.pos - Vector2(110, 0)
 		c.draw_string_outline(font, pos, n.text, HORIZONTAL_ALIGNMENT_CENTER, 220, size, 10, Color(0.1, 0.05, 0.08, col.a))
 		c.draw_string(font, pos, n.text, HORIZONTAL_ALIGNMENT_CENTER, 220, size, col)
+	# Ultimate: screen flash and banner
+	if _flash > 0.0:
+		var fc := _flash_color
+		fc.a = _flash * 0.35
+		c.draw_rect(Rect2(Vector2(-40, -40), view + Vector2(80, 80)), fc)
+	if _banner_t > 0.0:
+		var a := minf(1.0, _banner_t * 3.0)
+		var grow := 1.0 + maxf(0.0, _banner_t - 1.1) * 1.5
+		var y := view.y * 0.32
+		c.draw_rect(Rect2(0, y - 70, view.x, 110), Color(0.05, 0.02, 0.08, 0.6 * a))
+		var col := _banner_color
+		col.a = a
+		var size := int(84 * grow)
+		c.draw_string_outline(font, Vector2(0, y + 10), _banner, HORIZONTAL_ALIGNMENT_CENTER, view.x, size, 16, Color(0.1, 0.03, 0.06, a))
+		c.draw_string(font, Vector2(0, y + 10), _banner, HORIZONTAL_ALIGNMENT_CENTER, view.x, size, col)

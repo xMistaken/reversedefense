@@ -13,6 +13,8 @@ var cost_scale := 1.0             # multiplies every upgrade cost
 const HERO_LEVEL_DAMAGE := 1.15   # damage multiplier per hero level
 const HERO_COST_BASE := 120.0
 const HERO_COST_GROWTH := 1.17
+## Shards to go from rank i+1 to rank i+2 (heroes start at rank 1).
+const RANK_COSTS := [4, 8, 14, 22, 32]
 
 var ARMORY := {
 	"might": {"name": "Might", "desc": "+8% damage for every hero",
@@ -37,6 +39,8 @@ var gold := 0.0
 var highest_cleared := 0
 var selected_hero := "warrior"
 var hero_levels: Dictionary = {}  # hero id -> level (1+)
+var hero_ranks: Dictionary = {}   # hero id -> rank (1-6), unlocks perks and the ultimate
+var hero_shards: Dictionary = {}  # hero id -> shards toward the next rank
 var armory: Dictionary = {}       # upgrade id -> level (0+)
 var persist := true               # tests turn this off
 
@@ -49,6 +53,32 @@ func _ready() -> void:
 
 func hero_level(hero_id: String) -> int:
 	return hero_levels.get(hero_id, 1)
+
+
+func hero_rank(hero_id: String) -> int:
+	return hero_ranks.get(hero_id, 1)
+
+
+func shards(hero_id: String) -> int:
+	return hero_shards.get(hero_id, 0)
+
+
+## Shards needed to go from the hero's current rank to the next.
+func rank_cost(hero_id: String) -> int:
+	return RANK_COSTS[mini(hero_rank(hero_id) - 1, RANK_COSTS.size() - 1)]
+
+
+func can_rank_up(hero_id: String) -> bool:
+	return hero_rank(hero_id) < Data.HERO_MAX_RANK and shards(hero_id) >= rank_cost(hero_id)
+
+
+func rank_up(hero_id: String) -> bool:
+	if not can_rank_up(hero_id):
+		return false
+	hero_shards[hero_id] = shards(hero_id) - rank_cost(hero_id)
+	hero_ranks[hero_id] = hero_rank(hero_id) + 1
+	save_game()
+	return true
 
 
 func armory_level(id: String) -> int:
@@ -146,15 +176,24 @@ func clear_bonus(stage: int, first_clear: bool) -> float:
 	return b * (3.0 if first_clear else 1.0)
 
 
-## Called by the stage when a run ends. Returns the gold awarded.
-func finish_run(stage: int, won: bool, run_gold: float) -> Dictionary:
+## Called by the stage when a run ends. Every hero in the party earns shards.
+func finish_run(stage: int, won: bool, run_gold: float, party: Array[String] = []) -> Dictionary:
 	var first := won and stage > highest_cleared
 	var bonus := clear_bonus(stage, first) if won else 0.0
 	gold += run_gold + bonus
+	var shard_gain := 1
+	if won:
+		shard_gain += 1
+		if stage % StageConfig.BOSS_EVERY == 0:
+			shard_gain += 2
+		if first:
+			shard_gain += 2
+	for h in party:
+		hero_shards[h] = shards(h) + shard_gain
 	if won:
 		highest_cleared = maxi(highest_cleared, stage)
 	save_game()
-	return {"bonus": bonus, "first_clear": first, "total": run_gold + bonus}
+	return {"bonus": bonus, "first_clear": first, "total": run_gold + bonus, "shards": shard_gain}
 
 
 # --- Save / load ------------------------------------------------------------
@@ -164,6 +203,8 @@ func reset() -> void:
 	highest_cleared = 0
 	selected_hero = "warrior"
 	hero_levels = {}
+	hero_ranks = {}
+	hero_shards = {}
 	armory = {}
 
 
@@ -175,7 +216,7 @@ func save_game() -> void:
 		return
 	f.store_string(JSON.stringify({
 		"gold": gold, "highest_cleared": highest_cleared, "selected_hero": selected_hero,
-		"hero_levels": hero_levels, "armory": armory,
+		"hero_levels": hero_levels, "hero_ranks": hero_ranks, "hero_shards": hero_shards, "armory": armory,
 	}))
 
 
@@ -192,6 +233,10 @@ func load_game() -> void:
 		selected_hero = "warrior"
 	for k in data.get("hero_levels", {}):
 		hero_levels[k] = int(data.hero_levels[k])
+	for k in data.get("hero_ranks", {}):
+		hero_ranks[k] = int(data.hero_ranks[k])
+	for k in data.get("hero_shards", {}):
+		hero_shards[k] = int(data.hero_shards[k])
 	for k in data.get("armory", {}):
 		armory[k] = int(data.armory[k])
 

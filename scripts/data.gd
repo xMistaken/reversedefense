@@ -65,6 +65,70 @@ var HEROES := {
 
 ## target: "self" = only the owning hero, "party" = every hero, "global" = run-wide value.
 ## mods: [stat, "add" | "mul", value], applied once per rank.
+## Permanent hero ranks (LV1-6), bought with hero shards between runs.
+## LV1 describes the hero's innate attack; LV2-5 are passive perks (mods apply
+## like skill mods); LV6 is the hero's ultimate, a periodic screen-wide attack.
+var HERO_RANKS := {
+	"warrior": [
+		{"name": "Cleaving Axes", "desc": "Thrown axes cut through 2 sections."},
+		{"name": "Twin Axes", "desc": "+1 axe per throw.", "mods": [["count", "add", 1]]},
+		{"name": "Brutality", "desc": "Crit rate +20%, crit damage +50%.", "mods": [["crit", "add", 0.2], ["crit_mult", "mul", 1.5]]},
+		{"name": "Ricochet", "desc": "Axes bounce to 1 more section.", "mods": [["bounce", "add", 1]]},
+		{"name": "Warlord", "desc": "All damage +100%.", "mods": [["damage", "mul", 2.0]]},
+		{"name": "EARTHSHATTER", "desc": "Every 10s the Warrior slams the ground: every section on screen takes 400% damage.", "ult": true},
+	],
+	"mage": [
+		{"name": "Fireball", "desc": "Fireballs explode, splashing nearby sections."},
+		{"name": "Inferno", "desc": "Blast radius +50%.", "mods": [["splash", "mul", 1.5]]},
+		{"name": "Ignite", "desc": "Fireballs burn for 8 damage per second.", "mods": [["dot", "add", 8.0]]},
+		{"name": "Twin Spell", "desc": "+1 fireball per cast.", "mods": [["count", "add", 1]]},
+		{"name": "Archmage", "desc": "All damage +100%.", "mods": [["damage", "mul", 2.0]]},
+		{"name": "ARMAGEDDON", "desc": "Every 12s, 8 meteors crash into random sections for 600% damage each, with a huge blast.", "ult": true},
+	],
+	"hunter": [
+		{"name": "Rapid Shot", "desc": "Fires arrows very quickly."},
+		{"name": "Volley", "desc": "+2 arrows per shot.", "mods": [["count", "add", 2]]},
+		{"name": "Piercing Arrows", "desc": "Arrows pierce 1 more section.", "mods": [["pierce", "add", 1]]},
+		{"name": "Quickdraw", "desc": "Attack speed +30%.", "mods": [["cooldown", "mul", 0.77]]},
+		{"name": "Marksman", "desc": "All damage +100%.", "mods": [["damage", "mul", 2.0]]},
+		{"name": "RAIN OF ARROWS", "desc": "Every 8s, arrows rain on the whole screen: every section takes 250% damage.", "ult": true},
+	],
+	"priest": [
+		{"name": "Holy Shove", "desc": "Holy bolts, and a periodic shove that pushes the wyrm back."},
+		{"name": "Mighty Shove", "desc": "Shoves push 40px further.", "mods": [["push", "add", 40.0]]},
+		{"name": "Smite", "desc": "Holy bolts bounce to 1 more section.", "mods": [["bounce", "add", 1]]},
+		{"name": "Zeal", "desc": "Attack speed +25%.", "mods": [["cooldown", "mul", 0.8]]},
+		{"name": "High Priest", "desc": "All damage +100%.", "mods": [["damage", "mul", 2.0]]},
+		{"name": "DIVINE JUDGMENT", "desc": "Every 14s, holy light smites every section on screen for 300% damage and repairs the wall by 15%.", "ult": true},
+	],
+	"rogue": [
+		{"name": "Fan of Daggers", "desc": "Throws 3 daggers with a high crit chance."},
+		{"name": "Hidden Blades", "desc": "+2 daggers per throw.", "mods": [["count", "add", 2]]},
+		{"name": "Assassinate", "desc": "Crit rate +20%, crit damage +55%.", "mods": [["crit", "add", 0.2], ["crit_mult", "mul", 1.55]]},
+		{"name": "Venom", "desc": "Daggers poison for 6 damage per second.", "mods": [["dot", "add", 6.0]]},
+		{"name": "Master Thief", "desc": "All damage +100%.", "mods": [["damage", "mul", 2.0]]},
+		{"name": "SHADOW FLURRY", "desc": "Every 9s, 14 shadow strikes hit random sections; every strike is a critical hit.", "ult": true},
+	],
+	"warlock": [
+		{"name": "Curse", "desc": "Shadow bolts leave a burning curse."},
+		{"name": "Spreading Curse", "desc": "Curses spread to 1 more section on each side.", "mods": [["dot_spread", "add", 1]]},
+		{"name": "Twin Bolts", "desc": "+1 bolt per cast.", "mods": [["count", "add", 1]]},
+		{"name": "Malice", "desc": "Curse damage +100%.", "mods": [["dot", "mul", 2.0]]},
+		{"name": "Dark Lord", "desc": "All damage +100%.", "mods": [["damage", "mul", 2.0], ["dot", "mul", 2.0]]},
+		{"name": "DOOM", "desc": "Every 12s, every section on screen is cursed and takes 350% damage.", "ult": true},
+	],
+}
+const HERO_MAX_RANK := 6
+## Ultimate timing and power (damage is a multiple of the hero's hit damage).
+var ULTIMATES := {
+	"warrior": {"interval": 10.0, "mult": 4.0, "color": Color(1.0, 0.55, 0.25)},
+	"mage": {"interval": 12.0, "mult": 6.0, "hits": 8, "color": Color(1.0, 0.45, 0.1)},
+	"hunter": {"interval": 8.0, "mult": 2.5, "color": Color(0.5, 1.0, 0.4)},
+	"priest": {"interval": 14.0, "mult": 3.0, "repair": 0.15, "color": Color(1.0, 0.95, 0.6)},
+	"rogue": {"interval": 9.0, "mult": 1.0, "hits": 14, "crit": true, "color": Color(0.75, 0.5, 1.0)},
+	"warlock": {"interval": 12.0, "mult": 3.5, "curse": true, "color": Color(0.7, 0.3, 1.0)},
+}
+
 var SKILLS := [
 	# Party-wide (always offered)
 	{"id": "sharpen", "name": "Sharpened Steel", "hero": "", "target": "party",

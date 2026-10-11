@@ -171,11 +171,32 @@ Keen Eye (+crit), Chilling Aura (slower wyrm).
 - Stage HP grows a bit faster than the power you can buy, so pushing deeper
   means replaying stages to farm gold, and more farming the deeper you go.
 
+### Heroes: Train and Skill ranks (LV1–6)
+
+Each hero has two permanent progressions, shown on its hero screen (portrait,
+stats, Train, Skills):
+
+- **Train (gold):** hero level, +15% damage per level, with no cap.
+- **Skill rank LV1–6 (hero shards):**
+  - Every hero in your party at the end of a run earns shards: +1, plus 1 more
+    for a win, 2 more for a boss win and 2 more for a first clear.
+  - Ranking up costs 4, 8, 14, 22 and 32 shards.
+
+| Hero | LV2 | LV3 | LV4 | LV5 | **LV6 Ultimate** |
+|---|---|---|---|---|---|
+| Warrior | +1 axe | +20% crit, +50% crit dmg | +1 bounce | All dmg +100% | **Earthshatter**: every 10s, all sections on screen take 400% |
+| Mage | +50% blast | Burn 8/s | +1 fireball | All dmg +100% | **Armageddon**: every 12s, 8 meteors for 600% each, with a blast |
+| Hunter | +2 arrows | +1 pierce | +30% speed | All dmg +100% | **Rain of Arrows**: every 8s, all sections take 250% |
+| Priest | Shove +40px | +1 bounce | +25% speed | All dmg +100% | **Divine Judgment**: every 14s, 300% to all and repairs the wall 15% |
+| Rogue | +2 daggers | +20% crit, +55% crit dmg | Poison 6/s | All dmg +100% | **Shadow Flurry**: every 9s, 14 guaranteed-crit strikes |
+| Warlock | Curse spreads +1 | +1 bolt | Curse x2 | All dmg x2 | **Doom**: every 12s, curse everything and deal 350% |
+
+Ultimates fire with a screen flash, a big name banner and a screen shake.
+
 ### Permanent upgrades (gold)
 
 | Upgrade | Effect | Cap |
 |---|---|---|
-| Hero level (each hero) | +15% damage per level, compounding | none |
 | Might | +8% damage for all heroes, compounding | none |
 | Haste | +3% attack speed | 25 |
 | Ferocity | +25% crit damage | none |

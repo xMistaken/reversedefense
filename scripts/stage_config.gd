@@ -40,7 +40,7 @@ static func make(n: int) -> StageConfig:
 	c.theme = Data.THEME_ORDER[((n - 1) / 10) % Data.THEME_ORDER.size()]
 	# Regular sections plus the chest orbs embedded among them.
 	c.segment_count = mini(14 + n / 5, 30) + (6 if c.boss else 0) + HERO_CHESTS + SKILL_CHESTS
-	c.base_hp = 140.0 * pow(hp_growth_per_stage, n - 1) * (1.4 if c.boss else 1.0)
+	c.base_hp = 140.0 * pow(hp_growth_per_stage, n - 1) * (1.25 if c.boss else 1.0)
 	c.speed = 55.0 + minf(n, 60) * 0.3
 	c.bone_chance = minf(0.12 + n * 0.003, 0.35)
 	c.mending_chance = minf(0.06 + n * 0.0015, 0.18)
@@ -108,7 +108,7 @@ func _shape(view: Vector2, center: Vector2, wall_y: float, wall_radius: float) -
 	rng.seed = track_seed
 	var cw := rng.randf() < 0.5
 	var start := rng.randf_range(-PI * 0.85, -PI * 0.15)  # enter from the top half
-	var r_outer := view.x * 0.44
+	var r_outer := view.x * 0.41
 	var r_inner := wall_radius + 105.0
 	var left := 150.0
 	var right := view.x - 150.0

@@ -91,7 +91,8 @@ func show_home() -> void:
 	var next := Meta.next_stage()
 	box.add_child(_button("PLAY  %s" % StageConfig.make(next).title, func() -> void: start_stage(next), 54))
 	box.add_child(_button("Choose stage (farm gold)", show_stage_select))
-	box.add_child(_button("Upgrades", show_upgrades))
+	box.add_child(_button("Heroes", show_heroes, 44, Color.WHITE, _any_rank_up()))
+	box.add_child(_button("Armory", show_upgrades))
 	_swap(s[0])
 
 
@@ -130,20 +131,9 @@ func show_stage_select() -> void:
 func show_upgrades() -> void:
 	var s := _screen(true)
 	var box: VBoxContainer = s[1]
-	box.add_child(_label("Upgrades", 72, Color(0.95, 0.75, 0.25)))
+	box.add_child(_label("Armory", 72, Color(0.95, 0.75, 0.25)))
 	box.add_child(_label("Gold: %s" % Meta.fmt(Meta.gold), 48, Color(1, 0.85, 0.3)))
 
-	box.add_child(_label("Heroes  (+15% damage per level)", 40, Color.WHITE))
-	for id in Data.HEROES:
-		var h: Dictionary = Data.HEROES[id]
-		var info := "%s  Lv %d\nDamage x%s" % [h.name, Meta.hero_level(id), _mult(Meta.hero_damage_mult(id))]
-		box.add_child(_upgrade_row(info, h.color, Meta.hero_cost(id), false, Art.HEROES[id],
-			func() -> void:
-				if Meta.buy_hero_level(id):
-					show_upgrades()))
-
-	box.add_child(_spacer(10))
-	box.add_child(_label("Armory", 40, Color.WHITE))
 	for id in Meta.ARMORY:
 		var a: Dictionary = Meta.ARMORY[id]
 		var lvl := Meta.armory_level(id)
@@ -154,6 +144,109 @@ func show_upgrades() -> void:
 				if Meta.buy_armory(id):
 					show_upgrades()))
 	box.add_child(_button("Back", show_home))
+	_swap(s[0])
+
+
+# --- Heroes ------------------------------------------------------------------
+
+func _any_rank_up() -> bool:
+	for id in Data.HEROES:
+		if Meta.can_rank_up(id):
+			return true
+	return false
+
+
+func show_heroes() -> void:
+	var s := _screen(true)
+	var box: VBoxContainer = s[1]
+	box.add_child(_label("Heroes", 72, Color(0.95, 0.75, 0.25)))
+	box.add_child(_label("Train with gold. Rank up with hero shards,\nwhich every party member earns each run.", 30, Color(0.85, 0.85, 0.9)))
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 20)
+	grid.add_theme_constant_override("v_separation", 20)
+	box.add_child(grid)
+	for id in Data.HEROES:
+		var h: Dictionary = Data.HEROES[id]
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(480, 260)
+		b.icon = Art.HEROES[id]
+		b.expand_icon = true
+		b.add_theme_constant_override("icon_max_width", 150)
+		b.add_theme_font_size_override("font_size", 34)
+		var rank := Meta.hero_rank(id)
+		var shard_txt := "MAX" if rank >= Data.HERO_MAX_RANK else "%d/%d" % [Meta.shards(id), Meta.rank_cost(id)]
+		b.text = "%s\nLv %d\nRank %d/%d\nShards %s%s" % [h.name, Meta.hero_level(id), rank, Data.HERO_MAX_RANK, shard_txt, "  !" if Meta.can_rank_up(id) else ""]
+		if Meta.can_rank_up(id):
+			b.add_theme_stylebox_override("normal", UITheme.blue_box())
+		b.pressed.connect(show_hero.bind(id))
+		grid.add_child(b)
+	box.add_child(_button("Back", show_home))
+	_swap(s[0])
+
+
+func show_hero(id: String) -> void:
+	var h: Dictionary = Data.HEROES[id]
+	var s := _screen(true)
+	var box: VBoxContainer = s[1]
+	box.add_child(_label(h.name, 80, Color(0.95, 0.75, 0.25)))
+
+	# Portrait + stats card
+	var card := HBoxContainer.new()
+	card.add_theme_constant_override("separation", 30)
+	box.add_child(card)
+	var portrait := TextureRect.new()
+	portrait.texture = Art.HEROES[id]
+	portrait.custom_minimum_size = Vector2(300, 340)
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	card.add_child(portrait)
+	var stats := RunState.new(id).hero_stats(id)
+	var info := Label.new()
+	info.add_theme_font_size_override("font_size", 36)
+	info.text = "Level %d   Rank %d\n\nDamage  %s\nAttack interval  %.2fs\nProjectiles  %d\nCrit  %d%%  (x%.1f)" % [
+		Meta.hero_level(id), Meta.hero_rank(id), Meta.fmt(stats.damage * stats.power), stats.cooldown,
+		stats.count, int(stats.crit * 100.0), stats.crit_mult]
+	card.add_child(info)
+
+	# Train (gold)
+	box.add_child(_label("Train", 46, Color.WHITE))
+	box.add_child(_upgrade_row("Level %d  ->  %d\n+15%% damage" % [Meta.hero_level(id), Meta.hero_level(id) + 1],
+		h.color, Meta.hero_cost(id), false, null,
+		func() -> void:
+			if Meta.buy_hero_level(id):
+				show_hero(id)))
+
+	# Skill track (ranks)
+	box.add_child(_label("Skills", 46, Color.WHITE))
+	var rank := Meta.hero_rank(id)
+	var perks: Array = Data.HERO_RANKS[id]
+	for i in perks.size():
+		var p: Dictionary = perks[i]
+		var unlocked := i < rank
+		var row := PanelContainer.new()
+		var l := Label.new()
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(900, 0)
+		l.add_theme_font_size_override("font_size", 32)
+		var tag := "LV%d %s:" % [i + 1, "ULTIMATE" if p.get("ult", false) else "Unlock"]
+		l.text = "%s %s\n%s" % [tag, p.name, p.desc]
+		var col := Color(0.55, 1.0, 0.5) if unlocked else Color(0.62, 0.6, 0.68)
+		if p.get("ult", false):
+			col = Color(1.0, 0.7, 0.25) if unlocked else Color(0.85, 0.6, 0.35)
+		l.add_theme_color_override("font_color", col)
+		row.add_child(l)
+		box.add_child(row)
+
+	var maxed := rank >= Data.HERO_MAX_RANK
+	var rank_btn := _button("MAX RANK" if maxed else "Rank Up  (%d / %d shards)" % [Meta.shards(id), Meta.rank_cost(id)],
+		func() -> void:
+			if Meta.rank_up(id):
+				Sfx.play("legendary")
+				show_hero(id))
+	rank_btn.disabled = not Meta.can_rank_up(id)
+	box.add_child(rank_btn)
+	box.add_child(_button("Back", show_heroes))
 	_swap(s[0])
 
 
@@ -173,7 +266,7 @@ func _upgrade_row(info: String, color: Color, cost: float, maxed: bool, icon: Te
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", 28)
+	l.add_theme_font_size_override("font_size", 34)
 	l.add_theme_color_override("font_color", color)
 	row.add_child(l)
 	var b := Button.new()
@@ -235,8 +328,11 @@ func _label(text: String, size: int, color: Color) -> Label:
 	return l
 
 
-func _button(text: String, cb: Callable, size := 44, color := Color.WHITE) -> Button:
+func _button(text: String, cb: Callable, size := 44, color := Color.WHITE, highlight := false) -> Button:
 	var b := Button.new()
+	if highlight:
+		b.add_theme_stylebox_override("normal", UITheme.blue_box())
+		text += "  !"
 	b.text = text
 	b.custom_minimum_size = Vector2(900, 130)
 	b.add_theme_font_size_override("font_size", size)

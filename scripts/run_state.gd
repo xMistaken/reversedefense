@@ -20,6 +20,11 @@ func _init(starting_hero: String, with_meta := true) -> void:
 		refreshes += Meta.bonus_refreshes()
 
 
+## True if this hero's ultimate (rank 6) is unlocked.
+func has_ultimate(hero_id: String) -> bool:
+	return use_meta and Meta.hero_rank(hero_id) >= Data.HERO_MAX_RANK
+
+
 func has_hero(hero_id: String) -> bool:
 	return party.has(hero_id)
 
@@ -45,6 +50,10 @@ func hero_stats(hero_id: String) -> Dictionary:
 		s.power = Meta.hero_damage_mult(hero_id) * Meta.damage_mult()
 		s.cooldown *= Meta.cooldown_mult()
 		s.crit_mult = Meta.crit_mult()
+		var perks: Array = Data.HERO_RANKS[hero_id]
+		for r in range(1, Meta.hero_rank(hero_id)):
+			for m in perks[r].get("mods", []):
+				_apply_mod(s, m)
 	for skill in Data.SKILLS:
 		var r := rank_of(skill.id)
 		if r == 0:

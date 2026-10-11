@@ -7,9 +7,9 @@ segments recruits heroes and teaches skills (pick 1 of 3, with refreshes).
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for the full design.
 
-| Home | War Wagon (boss) | Ritual Circle | End of run |
+| Home | War Wagon (boss) | Hero ranks | End of run |
 |---|---|---|---|
-| ![](docs/screenshots/home.png) | ![](docs/screenshots/wagon.png) | ![](docs/screenshots/circle.png) | ![](docs/screenshots/end.png) |
+| ![](docs/screenshots/home.png) | ![](docs/screenshots/wagon.png) | ![](docs/screenshots/hero.png) | ![](docs/screenshots/end.png) |
 
 ## Status
 
@@ -24,8 +24,10 @@ See [`docs/DESIGN.md`](docs/DESIGN.md) for the full design.
 **Milestone 2, roguelite progression**
 - **100 stages** with exponential HP scaling and an Elder Wyrm boss every 10
 - **Gold:** kept even when you lose; replay stages to farm it
-- **Permanent upgrades:** hero levels, plus an armory (Might, Haste, Ferocity,
-  Fortune, Insight, Treasure Hunter, Head Start)
+- **Heroes:** Train with gold, and rank LV1–6 with hero shards. Each rank
+  unlocks a perk, and **LV6 is a screen-wide ultimate**
+- **Armory:** Might, Haste, Ferocity, Fortune, Insight, Treasure Hunter,
+  Head Start, Fortify
 - **34 skills:** skill rarities (Rare = +2 ranks, Epic = +3), plus one
   **Legendary** per hero
 - Floating damage numbers, big-number formatting and end-of-run damage stats
