@@ -19,9 +19,11 @@ INBOX = ROOT / "art_inbox"
 OUT = ROOT / "assets" / "art"
 
 THEMES = ["ember", "frost", "crypt", "abyss"]  # sheet order: TL, TR, BL, BR
+BODY_BLEND = 0.22   # share of the body art cross-faded to make it loop seamlessly
+BODY_PAD = 0.08     # wrap-around padding on each side (keep in sync with wyrm.gd)
 
 
-def remove_white(img: Image.Image) -> np.ndarray:
+def remove_white(img: Image.Image, strict_holes: bool = False) -> np.ndarray:
     """RGBA float array (0-1) with the white background made transparent."""
     rgb = np.asarray(img.convert("RGB")).astype(np.float32)
     lo = rgb.min(axis=2)
@@ -40,7 +42,10 @@ def remove_white(img: Image.Image) -> np.ndarray:
     means = ndimage.mean(lo, labels, index=idx)
     stds = ndimage.standard_deviation(lo, labels, index=idx)
     for i in range(n):
-        if i + 1 not in border and sizes[i] > 60 and means[i] > 246 and stds[i] < 9:
+        hole = means[i] > 246 and stds[i] < 9
+        if strict_holes:  # no white art on these sheets, so any enclosed pale gap goes
+            hole = means[i] > 232 and stds[i] < 16
+        if i + 1 not in border and sizes[i] > 60 and hole:
             bg |= labels == i + 1
 
     alpha = np.ones((h, w), np.float32)
@@ -84,6 +89,22 @@ def pieces(rgba: np.ndarray, merge: int = 18, min_frac: float = 0.004) -> list:
     return [b for r in rows for b in sorted(r, key=lambda b: b[0])]
 
 
+def clean(rgba: np.ndarray) -> np.ndarray:
+    """Remove stray pixels: near-invisible noise and small blobs that aren't
+    part of the main piece (JPEG specks, embers, slivers of neighbours)."""
+    out = rgba.copy()
+    alpha = out[..., 3]
+    alpha[alpha < 0.12] = 0.0
+    solid = alpha > 0.0
+    labels, n = ndimage.label(ndimage.binary_dilation(solid, iterations=2))
+    if n > 1:
+        sizes = ndimage.sum(solid, labels, index=np.arange(1, n + 1))
+        keep_ids = np.nonzero(sizes >= max(sizes.max() * 0.03, 400))[0] + 1
+        alpha[~np.isin(labels, keep_ids)] = 0.0
+    out[..., 3] = alpha
+    return out
+
+
 def save(rgba: np.ndarray, box, path: Path, width: int = 0, height: int = 0, crop_x=(0.0, 1.0)) -> None:
     x0, y0, x1, y1 = box
     pad = 6
@@ -91,7 +112,11 @@ def save(rgba: np.ndarray, box, path: Path, width: int = 0, height: int = 0, cro
     x1, y1 = min(rgba.shape[1], x1 + pad), min(rgba.shape[0], y1 + pad)
     cw = x1 - x0
     x0, x1 = x0 + int(cw * crop_x[0]), x0 + int(cw * crop_x[1])
-    img = Image.fromarray((rgba[y0:y1, x0:x1] * 255).astype(np.uint8), "RGBA")
+    piece = clean(rgba[y0:y1, x0:x1])
+    # Trim to what's left after cleaning.
+    ys, xs = np.nonzero(piece[..., 3] > 0)
+    piece = piece[max(0, ys.min() - 2):ys.max() + 3, max(0, xs.min() - 2):xs.max() + 3]
+    img = Image.fromarray((piece * 255).astype(np.uint8), "RGBA")
     if width:
         img = img.resize((width, round(img.height * width / img.width)), Image.LANCZOS)
     elif height:
@@ -101,9 +126,42 @@ def save(rgba: np.ndarray, box, path: Path, width: int = 0, height: int = 0, cro
     print(f"  {path.relative_to(ROOT)}  {img.size}")
 
 
+def fade_right(path: Path, share: float = 0.2) -> None:
+    """Fade the right end of an image to transparent (tail joins the body)."""
+    a = np.asarray(Image.open(path).convert("RGBA")).astype(np.float32)
+    w = a.shape[1]
+    k = int(w * share)
+    ramp = np.linspace(1.0, 0.0, k, dtype=np.float32) ** 1.5
+    a[:, w - k:, 3] *= ramp[None, :]
+    Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+
+
+def make_seamless(path: Path) -> None:
+    """Cross-fade the ends of a body strip so it tiles horizontally, then pad
+    both sides with wrapped columns so slices near the ends read real pixels."""
+    a = np.asarray(Image.open(path).convert("RGBA")).astype(np.float32)
+    h, w, _ = a.shape
+    k = int(w * BODY_BLEND)
+    period = w - k
+    out = a[:, :period].copy()
+    ramp = (np.arange(k, dtype=np.float32) / k)[None, :, None]
+    # Premultiplied blend of the right end into the left end.
+    left, right = a[:, :k], a[:, period:]
+    lp = left[..., :3] * left[..., 3:] / 255.0
+    rp = right[..., :3] * right[..., 3:] / 255.0
+    alpha = right[..., 3:] * (1 - ramp) + left[..., 3:] * ramp
+    rgb = (rp * (1 - ramp) + lp * ramp) / np.maximum(alpha / 255.0, 1e-3)
+    out[:, :k, :3] = np.clip(rgb, 0, 255)
+    out[:, :k, 3:] = alpha
+    pad = int(period * BODY_PAD)
+    out = np.concatenate([out[:, period - pad:], out, out[:, :pad]], axis=1)
+    Image.fromarray(out.astype(np.uint8), "RGBA").save(path)
+    print(f"  seamless {path.relative_to(ROOT)}  period {period}px, pad {pad}px")
+
+
 def sheet(name: str, names: list, folder: str, merge: int = 18, **kw) -> None:
     src = next(INBOX.glob(name + ".*"))
-    rgba = remove_white(Image.open(src))
+    rgba = remove_white(Image.open(src), strict_holes=folder == "wyrm")
     boxes = pieces(rgba, merge)
     print(f"{src.name}: {len(boxes)} pieces")
     if len(boxes) != len(names):
@@ -117,7 +175,12 @@ def main() -> None:
     sheet("sheet1_heads", [f"head_{t}" for t in THEMES], "wyrm", merge=10, width=520)
     # Bodies: drop the hollow cut end on the right so slices tile cleanly.
     sheet("sheet2_bodies", [f"body_{t}" for t in THEMES], "wyrm", merge=10, width=900, crop_x=(0.02, 0.86))
-    sheet("sheet2b_tails", [f"tail_{t}" for t in THEMES], "wyrm", merge=10, width=520)
+    for t in THEMES:
+        make_seamless(OUT / "wyrm" / f"body_{t}.png")
+    # Tails: drop the hollow cut end, then fade the join so it blends into the body.
+    sheet("sheet2b_tails", [f"tail_{t}" for t in THEMES], "wyrm", merge=10, width=520, crop_x=(0.0, 0.93))
+    for t in THEMES:
+        fade_right(OUT / "wyrm" / f"tail_{t}.png")
     sheet("sheet3_heroes", ["warrior", "mage", "hunter", "priest", "rogue", "warlock"], "heroes", merge=8, height=360)
     sheet("sheet4_items", ["orb_skill", "orb_hero", "shot_axe", "shot_dagger", "shot_arrow", "shot_fire", "shot_holy", "shot_shadow"],
           "items", merge=8, height=240)
