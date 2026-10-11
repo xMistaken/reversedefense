@@ -6,6 +6,8 @@
 > all names, lore and art are original.
 
 Items marked **[ASSUMED]** are defaults that haven't been confirmed yet.
+All numbers live in `scripts/data.gd`, `scripts/meta.gd` and
+`scripts/stage_config.gd`.
 
 ---
 
@@ -41,27 +43,45 @@ Choose starting hero ─► Stage starts ─► Wyrm advances along the track
 
 ## 4. Stage types
 
-| Stage | Party position | Player input | Track shape |
-|---|---|---|---|
-| **Ritual Circle** (stationary) | Fixed at the center of the screen | Drag to aim; party auto-fires along the aim direction **[ASSUMED]** | Spiral or loop around the center |
-| **War Wagon** (vehicle) | Wagon at the bottom of the screen | Drag to slide left and right; party auto-fires upward **[ASSUMED]** | Serpentine, zig-zagging down from the top |
+| Stage | Party position | Player input |
+|---|---|---|
+| **Ritual Circle** (odd stages) | Fixed at the center of the screen | Drag to aim; the party auto-fires along the aim direction |
+| **War Wagon** (even stages) | Wagon at the bottom of the screen | Drag to slide left and right; the party auto-fires upward |
 
 The screen is portrait (1080×1920 reference resolution).
 
+### Wyrm movement varies per stage, and the path is hidden
+
+You never see the track; you only see the wyrm and the glowing exit portal
+it's heading for. Each stage picks a path shape and a speed pattern from its
+stage number, so a stage plays the same every time and can be learned when
+farming.
+
+- **Ritual Circle paths:** spiral, wobbling spiral, square spiral, drifting
+  loops. Each enters from a random side and turns clockwise or
+  counter-clockwise.
+- **War Wagon paths:** serpentine rows, sweeping S-curves, diagonal zig-zag.
+  Vertical columns were tried and cut: with straight-up fire, a column can
+  only be hit from below.
+- **Speed patterns:** *steady*; *pulse*, which slithers faster and slower;
+  and *surge*, which crawls, then lunges.
+- Speed is scaled by path length, so every shape takes about as long to
+  cross.
+
 ## 5. The Wyrm
 
-- A chain of **segments** following a path (`Path2D`), with fixed spacing
-  between them.
-- Each segment has its own HP. The **rearmost segment drives** the chain and
-  pushes everything ahead of it, Zuma-style. Breaking a middle segment leaves
-  a gap: the front part **stalls** until the back catches up and closes the
-  gap. Breaking segments mid-chain buys time.
-- The wyrm moves at a steady speed. It rushes in quickly at the start of a
-  stage, and skills can slow it.
-- **Head:** just the front of the chain. It has no boss HP and no special
-  role.
-- **Win condition:** destroy **every** segment of the creature.
-- **Lose condition:** the front of the chain reaches the end of the track.
+- An indestructible **head** leads a chain of body **segments** along a path
+  (`Path2D`), with fixed spacing between them. The head can't be targeted,
+  and projectiles pass through it.
+- Each body segment has its own HP. The **rearmost segment drives** the chain
+  forward, and the chain always stays connected: when a segment is
+  destroyed, everything ahead of it, including the head, **slides back** to
+  close the gap. Destroying the segment right behind the head pulls the head
+  back one segment, so killing segments at the front buys the most time.
+- The wyrm rushes in quickly at the start of a stage, then crawls at a steady
+  speed. Skills can slow it, and the Priest can shove it back.
+- **Win condition:** destroy **every** body segment.
+- **Lose condition:** the head reaches the end of the track.
 
 ### Segment types
 
@@ -77,45 +97,87 @@ The screen is portrait (1080×1920 reference resolution).
 
 ## 6. Chests and rewards
 
-- **Starting party:** one hero, chosen before the run **[ASSUMED]**.
+- **Starting party:** one hero, chosen before the run.
 - **Hero Chest:** shows **3 random heroes you don't already have**, and you
   pick one. There are no duplicates. Once all heroes are recruited, hero
   chests roll skills instead.
-- **Skill Chest:** shows **3 random skills**, and you pick one. Skills can be
-  new skills or ranks on ones you already have, for your current heroes or for
-  the whole party.
+- **Skill Chest:** about every 3rd segment. It shows **3 random skills**, and
+  you pick one. Each offer rolls a **rarity**:
+
+  | Rarity | Chance | Ranks gained |
+  |---|---|---|
+  | Common | 64% | +1 |
+  | Rare | 26% | +2 |
+  | Epic | 10% | +3 |
+  | **Legendary** | Always offered once unlocked | One-off, huge effect |
+
+- **Legendary skills:** each hero has one. It becomes available once that
+  hero's own skills total 6 ranks, and from then on it takes a slot in every
+  skill chest until you take it.
 - **Refreshes:** a shared pool for the whole run that rerolls the 3 options on
-  either chest type. You start with **2** **[ASSUMED]**, and more come from
-  Gilded segments.
+  either chest type. You start with 2, plus the Insight upgrade, and Gilded
+  segments give more.
 - The game pauses while a pick is open.
+
+### The "crazy damage" feel
+
+- Floating damage numbers on every hit, with crits bigger, yellow and marked
+  "!"
+- Big-number formatting (K, M, B, T and beyond)
+- Splash rings, crit flashes and pop effects on kills
+- The end screen shows total damage, biggest hit and skills learned
 
 ## 7. Heroes (starting roster of 6)
 
-Each hero adds a basic attack to the party volley and has its own skill pool.
+Each hero adds a basic attack to the party volley and has 4 skills plus a
+legendary. There are also 4 party-wide skills, 34 skills in all.
 
-| Class | Role | Basic attack | Sample skills |
+| Class | Basic attack | Skills | Legendary |
 |---|---|---|---|
-| **Warrior** | Close-range cleave | Thrown axe that pierces 2 segments | Whirlwind (spin AoE), Shield Ricochet (bounces along the chain), Execute (bonus damage vs. low HP) |
-| **Mage** | Area damage and control | Fireball with splash | Frost Nova (slows the whole wyrm), Arcane Barrage, Meteor |
-| **Hunter** | Sustained single target | Fast arrows | Multishot, Beast Companion (a pet that bites segments), Piercing Shot |
-| **Priest** | Support | Holy bolt | Divine Shield (pushes the wyrm back on the track), Smite Chain, Blessing (party attack speed) |
-| **Rogue** | Crits and burst | Fan of daggers | Poisoned Blades (stacking damage over time), Ambush (bonus vs. full-HP segments), Shadowstep Volley |
-| **Warlock** | Damage over time and spread | Shadow bolt | Corruption (spreads to adjacent segments), Summon Imp, Soul Drain (damage refreshes skill cooldowns) |
+| **Warrior** | Thrown axes that pierce 2 segments | Whirling Axes, Shield Ricochet, Execute, Heavy Axes | **Bladestorm**: +3 axes, +3 pierce, x2 damage |
+| **Mage** | Fireball with splash | Pyroblast, Frost Nova (slows the wyrm), Arcane Barrage, Ignite | **Meteor**: x2 blast radius, x3 damage |
+| **Hunter** | Rapid arrows | Multishot, Piercing Shot, Rapid Fire, Serpent Sting | **Storm of Arrows**: +4 arrows, 40% faster, bounce twice |
+| **Priest** | Holy bolt, plus a periodic shove of the wyrm | Divine Shield, Smite, Holy Nova, Blessing of Haste | **Divine Wrath**: whole party x2 damage |
+| **Rogue** | Fan of 3 daggers with high crit | Poisoned Blades, Fan of Knives, Cold Blood, Deadly Throw | **Death Mark**: +30% crit, x2 crit damage |
+| **Warlock** | Shadow bolt that curses (DoT) | Corruption (curse spreads), Shadow Volley, Agony, Soul Fire | **Plague**: x3 curse damage, spreads 2 more each side |
 
-**Party-wide skills** (available whatever heroes you have): +attack speed,
-+damage, +crit chance, +projectile count, slow aura.
+**Party-wide skills:** Sharpened Steel (+damage), War Drums (+attack speed),
+Keen Eye (+crit), Chilling Aura (slower wyrm).
 
-Skills have ranks 1–5. The skill pool only offers skills for heroes you
-currently have.
+## 8. Roguelite progression
 
-## 8. Progression between runs **[ASSUMED]**
+### 100 stages
 
-- Runs earn **gold** based on segments destroyed and stages cleared.
-- Gold unlocks classes for the starting-hero pick (2 are unlocked at first)
-  and buys small permanent stat upgrades.
-- A **campaign** of stages with increasing difficulty: longer wyrms, more
-  armored segments and faster speed. Stages alternate between the two stage
-  types.
+- Stages alternate between Ritual Circle (odd numbers) and War Wagon (even
+  numbers).
+- Every 10th stage is a **boss**, the Elder Wyrm: 60% more HP and 15 extra
+  segments.
+- Each stage, segment HP grows **exponentially**. Wyrms also get longer (45
+  segments, up to 90), faster, and have more bone and mending segments.
+- Clearing a stage unlocks the next one. You can replay any unlocked stage.
+
+### Gold and farming
+
+- You always keep the gold you earn, even when you lose or retreat.
+- Gold per segment scales with the stage number.
+- Clearing a stage gives a bonus, tripled on the first clear.
+- Stage HP grows a bit faster than the power you can buy, so pushing deeper
+  means replaying stages to farm gold, and more farming the deeper you go.
+
+### Permanent upgrades (gold)
+
+| Upgrade | Effect | Cap |
+|---|---|---|
+| Hero level (each hero) | +15% damage per level, compounding | none |
+| Might | +8% damage for all heroes, compounding | none |
+| Haste | +3% attack speed | 25 |
+| Ferocity | +25% crit damage | none |
+| Fortune | +10% gold earned | none |
+| Insight | +1 starting refresh | 5 |
+| Treasure Hunter | +2 skill chests per stage | 8 |
+| Head Start | Start each run with +1 random skill | 5 |
+
+Progress is saved automatically after every run and purchase.
 
 ## 9. Tech plan
 
@@ -125,17 +187,20 @@ currently have.
   When a segment is removed, the offsets behind it are compacted.
 - **Data-driven:** heroes, skills and segment types are data tables in
   `scripts/data.gd`, so balancing is just editing numbers.
-- **Art:** placeholder shapes and colors first, swapped for real assets later
-  **[ASSUMED]**.
+- **Art and audio:** Kenney CC0 packs (Tiny Dungeon heroes and tiles,
+  Particle Pack effects, RPG UI, Kenney Future font, RPG and impact sounds),
+  plus original pixel-art wyrm sprites. `tools/import_assets.py` rebuilds
+  `assets/` from the downloaded packs, and `assets/CREDITS.md` lists the
+  sources.
 - **Business model:** offline, with no ads or in-app purchases for now
   **[ASSUMED]**.
 
-## 10. Milestone 1: playable prototype
+## 10. Milestones
 
-- One Ritual Circle stage and one War Wagon stage
-- One wyrm with Flesh, Bone-plated, Hero Chest and Skill Chest segments
-- 3 heroes (Warrior, Mage, Hunter), each with about 3 skills, plus about 4
-  party-wide skills
-- Pick-3 UI with refreshes
-- Win and lose screens; no meta progression yet
-- Builds and runs as an Android APK
+1. **Playable prototype (done):** both stage types, 6 heroes, chests with
+   pick 1 of 3 and refreshes, Android APK built by CI.
+2. **Roguelite progression (done):** 100 stages, bosses, gold, permanent
+   upgrades, save game, rarities, legendaries, damage numbers.
+3. **Next ideas:** real art and sound, more segment types (brood spawners,
+   shielded), more stage layouts, hero unlocks, achievements, balance pass
+   from real play.

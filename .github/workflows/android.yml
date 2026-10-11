@@ -19,7 +19,7 @@ jobs:
         run: godot --headless --import || true
       - name: Run simulation
         run: |
-          godot --headless --fixed-fps 60 res://tests/sim_test.tscn -- runs=1 2>&1 | tee sim.log
+          godot --headless --fixed-fps 60 res://tests/sim_test.tscn -- mode=smoke stages=1,2 2>&1 | tee sim.log
           if grep -E "SCRIPT ERROR|^ERROR" sim.log; then echo "Errors found"; exit 1; fi
           grep -q "^WINS" sim.log
 
