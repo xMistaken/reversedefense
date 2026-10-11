@@ -180,7 +180,7 @@ stats, Train, Skills):
 - **Skill rank LV1–6 (hero shards):**
   - Every hero in your party at the end of a run earns shards: +1, plus 1 more
     for a win, 2 more for a boss win and 2 more for a first clear.
-  - Ranking up costs 4, 8, 14, 22 and 32 shards.
+  - Ranking up costs 8, 16, 28, 44 and 64 shards.
 
 | Hero | LV2 | LV3 | LV4 | LV5 | **LV6 Ultimate** |
 |---|---|---|---|---|---|

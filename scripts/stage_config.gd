@@ -3,7 +3,7 @@ extends RefCounted
 ## Procedural definition of stages 1..100. Difficulty ramps exponentially in
 ## HP (faster than gold income grows), so pushing deep needs farmed upgrades.
 
-static var hp_growth_per_stage := 1.16
+static var hp_growth_per_stage := 1.2
 const BOSS_EVERY := 10
 const SKILL_CHESTS := 10
 const HERO_CHESTS := 5

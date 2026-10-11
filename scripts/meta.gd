@@ -14,7 +14,7 @@ const HERO_LEVEL_DAMAGE := 1.15   # damage multiplier per hero level
 const HERO_COST_BASE := 120.0
 const HERO_COST_GROWTH := 1.17
 ## Shards to go from rank i+1 to rank i+2 (heroes start at rank 1).
-const RANK_COSTS := [4, 8, 14, 22, 32]
+const RANK_COSTS := [8, 16, 28, 44, 64]
 
 var ARMORY := {
 	"might": {"name": "Might", "desc": "+8% damage for every hero",
