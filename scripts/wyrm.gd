@@ -24,12 +24,14 @@ const MEND_RATE := 0.05       # fraction of max HP per second healed into neighb
 const INTRO_SPEED_MUL := 5.0
 const RETRACT_SPEED := 650.0  # how fast the front slides back to close a gap
 const BODY_HEIGHT := 215.0    # on-screen height of the painted body (incl. spikes)
-const BAND_OVERLAP := 0.35    # extra width each body slice draws, hides gaps on bends
+const BODY_SUBDIV := 2        # strip quads per plate (smoother curves)
 const BODY_PAD := 0.08        # wrapped padding each side of the seamless body art (see tools/process_art.py)
 const HEAD_SCALE := 0.5
 const TAIL_SCALE_MUL := 1.7  # tail art scale relative to the body art
 const ORB_SCALE := 0.52
 const TAPER_PLATES := 4       # rearmost plates that narrow into the tail
+const TAPER_MIN := 0.55       # body height at the very end, as a share of BODY_HEIGHT
+const TAIL_OVERLAP_PLATES := 3.0  # how far the tail's faded end reaches over the body
 const JOINT_SCALE_Y := 1.12   # joint rings stand slightly proud of the body
 
 ## A section of the body: several plates sharing one HP pool.
@@ -312,24 +314,31 @@ func _draw_section(s: Segment) -> void:
 	var period := ts.x / (1.0 + 2.0 * BODY_PAD)
 	var pad := period * BODY_PAD
 	var bands := maxi(1, roundi(period * sc / PLATE_SPACING))
-	var bw := period / bands               # source width of one slice
-	var ov := minf(bw * BAND_OVERLAP, pad * 2.0)
+	var bw := period / bands               # source width of one plate's slice
 	var col := _section_tint(s)
+	var cols := PackedColorArray([col, col, col, col])
 	var flip := _body_flip(s.plate_angle[s.plates / 2])
 	var is_last := s == segments[-1]
+	var tail_end := s.offset - s.length() + PLATE_SPACING * 0.5
+	var half := PLATE_SPACING * 0.5
+	# Each plate is drawn as a bent strip: its edges follow the path's normal,
+	# so the painted body curves smoothly round bends instead of fanning out.
 	for k in range(s.plates - 1, -1, -1):
 		if not s.plate_visible[k]:
 			continue
-		# The rearmost plates taper so the body narrows into the tail.
-		var taper := 1.0
-		if is_last and k >= s.plates - TAPER_PLATES:
-			taper = lerpf(1.0, 0.5, float(k - (s.plates - TAPER_PLATES) + 1) / TAPER_PLATES)
 		var band := (s.first_plate + k) % bands
-		var x := pad + period - (band + 1) * bw  # front of the body is the right of the art
-		var src := Rect2(x - ov * 0.5, 0, bw + ov, ts.y)
-		var stretch := PLATE_SPACING / (bw * sc)  # bands fit the plate spacing exactly
-		var sy := sc * taper
-		Art.draw_region(self, tex, src, s.plate_pos[k], Vector2(sc * stretch, -sy if flip else sy), s.plate_angle[k], col)
+		var x0 := pad + period - (band + 1) * bw  # front of the body is the right of the art
+		var o := s.offset - k * PLATE_SPACING
+		var prev := _body_edge(o + half, _taper(is_last, o + half - tail_end), flip)
+		for j in range(1, BODY_SUBDIV + 1):
+			var t := float(j) / BODY_SUBDIV
+			var eo := o + half - t * PLATE_SPACING
+			var edge := _body_edge(eo, _taper(is_last, eo - tail_end), flip)
+			var u_front := (x0 + bw * (1.0 - t + 1.0 / BODY_SUBDIV)) / ts.x
+			var u_back := (x0 + bw * (1.0 - t)) / ts.x
+			draw_primitive(PackedVector2Array([prev[0], edge[0], edge[1], prev[1]]), cols,
+				PackedVector2Array([Vector2(u_front, 0), Vector2(u_back, 0), Vector2(u_back, 1), Vector2(u_front, 1)]), tex)
+			prev = edge
 	if s.type == "gilded" or s.type == "mending":
 		var glow := Color(1, 0.8, 0.3, 0.45) if s.type == "gilded" else Color(0.3, 1, 0.4, 0.4)
 		Art.draw_sprite(self, Art.FX.glow, s.pos, 1.2, 0.0, glow)
@@ -343,28 +352,71 @@ func _draw_section(s: Segment) -> void:
 		Art.draw_sprite(self, orb, s.plate_pos[1], ORB_SCALE * pulse, 0.0, Color(1.6, 1.6, 1.6) if s.flash > 0.0 else Color.WHITE)
 
 
+## Top and bottom edge points of the body at track distance `o`.
+func _body_edge(o: float, height: float, flip: bool) -> PackedVector2Array:
+	var p := _sample(o)
+	var d := _sample(o + 6.0) - _sample(o - 6.0)
+	var n := Vector2(d.y, -d.x).normalized() if d != Vector2.ZERO else Vector2.UP
+	if flip:
+		n = -n
+	n *= height * 0.5
+	return PackedVector2Array([p + n, p - n])
+
+
+## Body height at `from_end` px ahead of the tail end: the last section narrows
+## smoothly into the tail.
+func _taper(is_last: bool, from_end: float) -> float:
+	if not is_last:
+		return BODY_HEIGHT
+	return BODY_HEIGHT * lerpf(TAPER_MIN, 1.0, clampf(from_end / (TAPER_PLATES * PLATE_SPACING), 0.0, 1.0))
+
+
 ## A raised, darker ring of armor at the front of a section, marking where
 ## one HP section ends and the next begins.
 func _draw_joint(s: Segment) -> void:
 	var tex: Texture2D = skin.joint
 	var sc := BODY_HEIGHT / (skin.body as Texture2D).get_height()
-	var a := s.plate_angle[0]
-	var pos := s.plate_pos[0] + Vector2.from_angle(a) * PLATE_SPACING * 0.5
+	var width := tex.get_width() * sc
 	var flip := _body_flip(s.plate_angle[s.plates / 2])
-	var sy := sc * JOINT_SCALE_Y
-	Art.draw_region(self, tex, Rect2(Vector2.ZERO, tex.get_size()), pos, Vector2(sc, -sy if flip else sy), a, _section_tint(s))
+	var col := _section_tint(s)
+	var cols := PackedColorArray([col, col, col, col])
+	var mid := s.offset + PLATE_SPACING * 0.5  # the seam with the section ahead
+	var prev := _body_edge(mid + width * 0.5, BODY_HEIGHT * JOINT_SCALE_Y, flip)
+	for j in range(1, 4):
+		var t := j / 3.0
+		var edge := _body_edge(mid + width * (0.5 - t), BODY_HEIGHT * JOINT_SCALE_Y, flip)
+		var u0 := 1.0 - (j - 1) / 3.0
+		var u1 := 1.0 - t
+		draw_primitive(PackedVector2Array([prev[0], edge[0], edge[1], prev[1]]), cols,
+			PackedVector2Array([Vector2(u0, 0), Vector2(u1, 0), Vector2(u1, 1), Vector2(u0, 1)]), tex)
+		prev = edge
 
 
 func _draw_tail(last: Segment) -> void:
 	var tex: Texture2D = skin.tail
 	var body: Texture2D = skin.body
 	var sc := BODY_HEIGHT / body.get_height() * TAIL_SCALE_MUL
-	var k := last.plates - 1
-	var a := last.plate_angle[k]
-	var dir := Vector2.from_angle(a)
-	# The tail's faded thick end overlaps the last couple of plates.
-	var pos := last.plate_pos[k] - dir * (tex.get_width() * sc * 0.5 - PLATE_SPACING * 3.0)
-	Art.draw_sprite(self, tex, pos, sc, a, _section_tint(last) if last.flash > 0.0 else Color.WHITE, _body_flip(a))
+	var height := tex.get_height() * sc
+	var tail_len := tex.get_width() * sc
+	var flip := _body_flip(last.plate_angle[last.plates - 1])
+	var col := _section_tint(last) if last.flash > 0.0 else Color.WHITE
+	var cols := PackedColorArray([col, col, col, col])
+	# The tail bends along the path too. Its faded thick end overlaps the
+	# tapered rear plates; the tip trails behind.
+	var front := last.offset - last.length() + PLATE_SPACING * (0.5 + TAIL_OVERLAP_PLATES)
+	var steps := maxi(4, ceili(tail_len / (PLATE_SPACING * 0.75)))
+	var prev := _body_edge(front, height, flip)
+	for j in range(1, steps + 1):
+		var t := float(j) / steps
+		var o := front - t * tail_len
+		if o < 0.0:
+			break
+		var edge := _body_edge(o, height, flip)
+		var u0 := 1.0 - float(j - 1) / steps
+		var u1 := 1.0 - t
+		draw_primitive(PackedVector2Array([prev[0], edge[0], edge[1], prev[1]]), cols,
+			PackedVector2Array([Vector2(u0, 0), Vector2(u1, 0), Vector2(u1, 1), Vector2(u0, 1)]), tex)
+		prev = edge
 
 
 func _draw_head() -> void:

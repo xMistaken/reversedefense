@@ -68,6 +68,51 @@ Bottom right: sea serpent tail, navy and teal scales with glowing cyan lines, en
 Each tail fully separated with lots of empty space between them, plain solid white background (not transparent, no checkerboard), no text, no labels, no borders, no shadows.
 ```
 
+## Prompts 2c to 2e: Seamless wyrm parts
+
+These make the body look like one creature instead of repeated slices. The
+game bends every piece along the path in code, so **all pieces are drawn
+straight**. Pre-curved pieces would only fit one exact bend.
+
+### Prompt 2c: Collars (between sections) → `sheet2c_collars.png`
+
+```
+Use the same painting style, colors and rendering as the serpent body pieces above. This image must contain NO heads, NO faces, NO eyes, NO mouths, NO teeth and NO skulls.
+Create one image: a 2 by 2 sprite sheet of four armor COLLARS. A collar is the ring of heavy armor that sits at the joint between two sections of a serpent's body, like a hoop around a barrel. Each collar is seen from the side and stands upright: a narrow vertical band about three times taller than it is wide, bulging slightly outward in the middle, made of thick overlapping armor plates. One large back-swept spike rises from its top end, and its bottom end is a pale curved belly plate. Its left and right edges are smooth, finished, rounded rims, not cut-off ends.
+Top left: fire dragon collar, blackened rock-like armor plates with glowing orange lava seams and a black spike.
+Top right: ice drake collar, steel-blue armor plates rimmed with jagged blue ice crystals.
+Bottom left: undead collar, one large ivory vertebra with curved ribs reaching down, faint green ghost-fire glowing in the gaps.
+Bottom right: sea serpent collar, navy and teal shell plates with glowing cyan edges and a fin spike on top.
+Each collar fully separated with lots of empty space between them, plain solid white background (not transparent, no checkerboard), no text, no labels, no borders, no shadows.
+```
+
+### Prompt 2d: Orb sockets (chest sections) → `sheet2d_sockets.png`
+
+```
+Use the same painting style, colors and rendering as the serpent body pieces above. This image must contain NO heads, NO faces, NO eyes, NO mouths, NO teeth and NO skulls.
+Create one image: a 2 by 2 sprite sheet of four short, straight pieces of serpent BODY, each a horizontal cylinder of armor seen from the side, about as wide as it is tall, with both the left and right ends cut off straight and plain. In the middle of each piece is an EMPTY round socket: a thick raised ring of armor around a dark hollow, where a glowing orb will be placed later. Do not draw the orb. A row of armor scales and spikes runs along the top edge, and pale belly plates run along the bottom edge.
+Top left: fire dragon, dark crimson rock-like scales with glowing orange lava cracks, the socket ring made of blackened iron.
+Top right: ice drake, frost-white and steel-blue scales, the socket ring made of jagged ice.
+Bottom left: undead, ivory vertebrae and ribs wrapped in dark sinew, the socket ring made of bone.
+Bottom right: sea serpent, navy and teal scales with glowing cyan lines, the socket ring made of shell.
+Each piece fully separated with lots of empty space between them, plain solid white background (not transparent, no checkerboard), no text, no labels, no borders, no shadows.
+```
+
+### Prompt 2e: Longer tails → `sheet2e_tails.png`
+
+```
+Use the same painting style, colors and rendering as the serpent body pieces above. This image must contain NO heads, NO faces, NO eyes, NO mouths, NO teeth and NO skulls.
+Create one image: four serpent TAILS stacked in four rows, one tail per row, each seen from the side and pointing LEFT. Each tail is long and slender, about four times longer than it is tall. The thick right end is exactly as tall as the body pieces above and is cut off straight and plain where it joins the body. From there the tail tapers smoothly and gradually all the way to a sharp point at the left end. Armor scales and small spikes run along the top edge, and pale belly plates run along the bottom edge, both shrinking toward the tip.
+Row 1: fire dragon tail, dark crimson rock-like scales with glowing orange lava cracks, a small cluster of black spikes at the tip.
+Row 2: ice drake tail, frost-white and steel-blue scales, a jagged blue ice crystal at the tip.
+Row 3: undead tail, a tapering chain of ivory vertebrae wrapped in dark sinew with faint green ghost-fire, a bone spike at the tip.
+Row 4: sea serpent tail, navy and teal scales with glowing cyan lines, a spined fin fluke at the tip.
+Each tail fully separated with lots of empty space between them, plain solid white background (not transparent, no checkerboard), no text, no labels, no borders, no shadows.
+```
+
+If a tail comes back curled, reply: "Make every tail perfectly straight and
+horizontal, thick end on the right, point on the left."
+
 ## Prompt 3: Heroes → `sheet3_heroes.png`
 
 ```

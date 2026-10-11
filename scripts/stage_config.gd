@@ -5,7 +5,7 @@ extends RefCounted
 
 static var hp_growth_per_stage := 1.2
 const BOSS_EVERY := 10
-const SKILL_CHESTS := 10
+const SKILL_CHESTS := 12
 const HERO_CHESTS := 5
 
 var number := 1
@@ -15,7 +15,7 @@ var boss := false
 var title := ""
 var segment_count := 45
 var base_hp := 50.0
-var hp_growth := 0.08      # within the chain: section i has base_hp * (1 + i * hp_growth)
+var hp_growth := 0.06      # within the chain: section i has base_hp * (1 + i * hp_growth)
 var speed := 55.0
 var bone_chance := 0.15
 var mending_chance := 0.08
@@ -24,8 +24,8 @@ var track_kind := ""
 var track_seed := 0
 var speed_pattern := "steady"  # "steady", "pulse" (speeds up and slows down) or "surge" (sudden lunges)
 
-const CIRCLE_TRACKS := ["spiral", "wobble_spiral", "square_spiral", "looping_spiral"]
-const WAGON_TRACKS := ["serpentine", "sine_descent", "zigzag"]
+const CIRCLE_TRACKS := ["spiral", "petals", "meander", "coil"]
+const WAGON_TRACKS := ["serpentine", "wavy", "zigzag", "curly"]
 const SPEED_PATTERNS := ["steady", "pulse", "surge"]
 ## Track lengths vary by shape; speed is scaled so a wyrm takes about as long
 ## to cross any of them.
@@ -39,7 +39,7 @@ static func make(n: int) -> StageConfig:
 	c.mode = 0 if n % 2 == 1 else 1
 	c.theme = Data.THEME_ORDER[((n - 1) / 10) % Data.THEME_ORDER.size()]
 	# Regular sections plus the chest orbs embedded among them.
-	c.segment_count = mini(14 + n / 5, 30) + (6 if c.boss else 0) + HERO_CHESTS + SKILL_CHESTS
+	c.segment_count = mini(22 + n / 4, 40) + (6 if c.boss else 0) + HERO_CHESTS + SKILL_CHESTS
 	c.base_hp = 140.0 * pow(hp_growth_per_stage, n - 1) * (1.25 if c.boss else 1.0)
 	c.speed = 55.0 + minf(n, 60) * 0.3
 	c.bone_chance = minf(0.12 + n * 0.003, 0.35)
@@ -109,29 +109,28 @@ func _shape(view: Vector2, center: Vector2, wall_y: float, wall_radius: float) -
 	rng.seed = track_seed
 	var cw := rng.randf() < 0.5
 	var start := rng.randf_range(-PI * 0.85, -PI * 0.15)  # enter from the top half
-	var r_outer := view.x * 0.4
-	var r_inner := wall_radius + 105.0
-	var left := 150.0
-	var right := view.x - 150.0
-	var top := 380.0
+	var r_inner := wall_radius + 95.0
+	var left := 110.0
+	var right := view.x - 110.0
+	var top := 300.0
 	var bottom := wall_y - 170.0
 	match track_kind:
 		"spiral":
-			return TrackBuilder.spiral(center, r_outer, r_inner, rng.randf_range(0.95, 1.15), start, cw)
-		"wobble_spiral":
-			return TrackBuilder.spiral(center, r_outer - 10.0, r_inner, rng.randf_range(0.9, 1.1), start, cw,
-				rng.randf_range(10.0, 16.0), float(rng.randi_range(5, 8)))
-		"square_spiral":
-			return TrackBuilder.square_spiral(center, r_outer - 20.0, r_inner - 20.0, rng.randf_range(1.0, 1.25), cw)
-		"looping_spiral":
-			return TrackBuilder.looping_spiral(center, r_outer - 20.0, r_inner, rng.randf_range(0.9, 1.1), start, cw)
+			return TrackBuilder.spiral(center, r_inner, start, cw, rng.randf_range(1.0, 1.15),
+				rng.randf_range(30.0, 50.0), float(rng.randi_range(6, 9)))
+		"petals":
+			return TrackBuilder.petals(center, r_inner, start, cw, rng.randf_range(1.0, 1.2), rng.randi_range(5, 7))
+		"meander":
+			return TrackBuilder.meander(center, r_inner, rng.randf() < 0.5, rng.randi_range(2, 3), 2)
+		"coil":
+			return TrackBuilder.coil(center, r_inner, start, cw, rng.randi_range(7, 10), rng.randf_range(80.0, 100.0))
 		"serpentine":
-			var rows := rng.randi_range(4, 5)
-			return TrackBuilder.serpentine(left, right, top, (bottom - top) / (rows - 1), rows, rng.randf() < 0.5)
-		"sine_descent":
-			return TrackBuilder.sine_descent(left, right, top, bottom, rng.randf_range(2.5, 3.5))
+			return TrackBuilder.serpentine(left, right, top, bottom, TrackBuilder.ROW_GAP, rng.randf() < 0.5)
+		"wavy":
+			return TrackBuilder.serpentine(left, right, top, bottom, 240.0, rng.randf() < 0.5,
+				rng.randf_range(35.0, 50.0), rng.randi_range(3, 4))
 		"zigzag":
-			return TrackBuilder.zigzag(left, right, top, bottom, rng.randi_range(3, 5))
-		"columns":
-			return TrackBuilder.columns(left, right, top, bottom, 5)
-	return TrackBuilder.spiral(center, r_outer, r_inner, 1.7, -PI / 2, true)
+			return TrackBuilder.zigzag(left, right, top, bottom, rng.randi_range(6, 8), rng.randf() < 0.5)
+		"curly":
+			return TrackBuilder.curly(left, right, top, bottom, 4, rng.randi_range(2, 3), rng.randf_range(80.0, 95.0), rng.randf() < 0.5)
+	return TrackBuilder.spiral(center, r_inner, start, cw, 1.0, 40.0, 7.0)

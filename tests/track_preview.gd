@@ -14,7 +14,7 @@ func _ready() -> void:
 	var view := Vector2(1080, 1920)
 	var center := Vector2(view.x / 2.0, view.y * 0.52)
 	var wall_y := view.y - 430.0
-	var kinds := StageConfig.CIRCLE_TRACKS + StageConfig.WAGON_TRACKS + ["columns"]
+	var kinds := StageConfig.CIRCLE_TRACKS + StageConfig.WAGON_TRACKS
 	for i in kinds.size():
 		var cfg := StageConfig.make(1 if i < 4 else 2)
 		cfg.track_kind = kinds[i]
