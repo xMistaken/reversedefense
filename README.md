@@ -49,10 +49,15 @@ See [`docs/DESIGN.md`](docs/DESIGN.md) for the full design.
 
 ## Get the APK
 
-Every push runs the **Test & build Android APK** GitHub Actions workflow.
-Open the latest run under the repo's *Actions* tab and download the
-`wyrmbreaker-debug-apk` artifact, then unzip it and install the `.apk` on your
-phone (you'll need to allow installing apps from unknown sources).
+Every push runs the **Test & build Android APK** workflow:
+
+1. Open the latest run under the repo's *Actions* tab.
+2. Download the artifact named `wyrmbreaker-v<version>-build<N>`.
+3. Unzip it and install the `.apk` on your phone (allow installing from
+   unknown sources).
+
+Builds are release-signed once the signing secrets are set up; see
+[`docs/RELEASE_SIGNING.md`](docs/RELEASE_SIGNING.md).
 
 ## Run it on a computer
 

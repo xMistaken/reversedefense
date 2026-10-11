@@ -24,10 +24,14 @@ jobs:
           grep -q "^WINS" sim.log
 
   android:
-    name: Export debug APK
+    name: Export APK
     runs-on: ubuntu-22.04
     container:
       image: barichello/godot-ci:4.3
+    env:
+      KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
     steps:
       - uses: actions/checkout@v4
       - name: Move Godot templates and editor settings into $HOME
@@ -35,15 +39,39 @@ jobs:
           mkdir -v -p ~/.local/share/godot/export_templates/ ~/.config/
           mv /root/.config/godot ~/.config/godot
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+      - name: Stamp version
+        id: version
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          BUILD="${GITHUB_RUN_NUMBER}"
+          sed -i "s/^version\/code=.*/version\/code=${BUILD}/; s/^version\/name=.*/version\/name=\"${VERSION}\"/" export_presets.cfg
+          sed -i "s/^config\/version=.*/config\/version=\"${VERSION} (build ${BUILD})\"/" project.godot
+          if [ -n "$KEYSTORE_BASE64" ]; then KIND=release; else KIND=debug; fi
+          NAME="wyrmbreaker-v${VERSION}-build${BUILD}"
+          [ "$KIND" = debug ] && NAME="${NAME}-debug"
+          echo "kind=$KIND" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "Building $NAME ($KIND)"
       - name: Import project
         run: godot --headless --import || true
       - name: Export APK
         run: |
           mkdir -v -p build/android
-          godot --headless --export-debug "Android" "$(readlink -f build)/android/wyrmbreaker.apk"
+          OUT="$(readlink -f build)/android/${{ steps.version.outputs.name }}.apk"
+          if [ "${{ steps.version.outputs.kind }}" = release ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$HOME/release.keystore"
+            export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$HOME/release.keystore"
+            export GODOT_ANDROID_KEYSTORE_RELEASE_USER="$KEYSTORE_ALIAS"
+            export GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD="$KEYSTORE_PASSWORD"
+            godot --headless --export-release "Android" "$OUT"
+            rm -f "$HOME/release.keystore"
+          else
+            echo "::warning::No signing key secrets set; building a debug-signed APK. See docs/RELEASE_SIGNING.md"
+            godot --headless --export-debug "Android" "$OUT"
+          fi
           ls -la build/android
-          test -f build/android/wyrmbreaker.apk
+          test -f "$OUT"
       - uses: actions/upload-artifact@v4
         with:
-          name: wyrmbreaker-debug-apk
-          path: build/android/wyrmbreaker.apk
+          name: ${{ steps.version.outputs.name }}
+          path: build/android/${{ steps.version.outputs.name }}.apk

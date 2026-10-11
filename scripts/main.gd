@@ -88,6 +88,7 @@ func show_home() -> void:
 	box.add_child(_button("Choose stage (farm gold)", show_stage_select))
 	box.add_child(_button("Heroes", show_heroes, 44, Color.WHITE, _any_rank_up()))
 	box.add_child(_button("Armory", show_upgrades))
+	box.add_child(_label("v" + str(ProjectSettings.get_setting("application/config/version", "")), 26, Color(0.85, 0.85, 0.9, 0.8)))
 	_swap(s[0])
 
 
