@@ -11,24 +11,24 @@ var gold_growth := 1.09
 var cost_scale := 1.0             # multiplies every upgrade cost
 
 const HERO_LEVEL_DAMAGE := 1.15   # damage multiplier per hero level
-const HERO_COST_BASE := 30.0
+const HERO_COST_BASE := 120.0
 const HERO_COST_GROWTH := 1.17
 
 var ARMORY := {
 	"might": {"name": "Might", "desc": "+8% damage for every hero",
-		"cost": 50.0, "growth": 1.21, "max": 0},
+		"cost": 200.0, "growth": 1.21, "max": 0},
 	"haste": {"name": "Haste", "desc": "+3% attack speed",
-		"cost": 80.0, "growth": 1.3, "max": 25},
+		"cost": 320.0, "growth": 1.3, "max": 25},
 	"ferocity": {"name": "Ferocity", "desc": "+25% critical hit damage",
-		"cost": 70.0, "growth": 1.24, "max": 0},
+		"cost": 280.0, "growth": 1.24, "max": 0},
 	"fortune": {"name": "Fortune", "desc": "+10% gold earned",
-		"cost": 60.0, "growth": 1.35, "max": 10},
+		"cost": 240.0, "growth": 1.35, "max": 10},
 	"insight": {"name": "Insight", "desc": "+1 refresh at the start of each run",
-		"cost": 150.0, "growth": 2.2, "max": 5},
+		"cost": 600.0, "growth": 2.2, "max": 5},
 	"treasure": {"name": "Treasure Hunter", "desc": "+2 extra skill chests per stage",
-		"cost": 200.0, "growth": 1.9, "max": 8},
+		"cost": 800.0, "growth": 1.9, "max": 8},
 	"head_start": {"name": "Head Start", "desc": "Start each run with +1 random skill",
-		"cost": 300.0, "growth": 2.4, "max": 5},
+		"cost": 1200.0, "growth": 2.4, "max": 5},
 }
 
 var gold := 0.0
