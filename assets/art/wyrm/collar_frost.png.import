@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c4uvtmyxg8njo"
-path="res://.godot/imported/joint_crypt.png-2fb95ed03d9e2f5d9e43ca9c9baf32d9.ctex"
+uid="uid://vsfxfbgi7784"
+path="res://.godot/imported/collar_frost.png-c8da86fce83eaa7c24247ee134d108c5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/wyrm/joint_crypt.png"
-dest_files=["res://.godot/imported/joint_crypt.png-2fb95ed03d9e2f5d9e43ca9c9baf32d9.ctex"]
+source_file="res://assets/art/wyrm/collar_frost.png"
+dest_files=["res://.godot/imported/collar_frost.png-c8da86fce83eaa7c24247ee134d108c5.ctex"]
 
 [params]
 

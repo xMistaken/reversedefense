@@ -32,31 +32,36 @@ const WAGON := preload("res://assets/art/defense/wagon.png")
 const RING := preload("res://assets/art/defense/ring.png")
 
 ## Per theme: head (faces right), body log (faces right; sliced into bands),
-## tail (thick end on the right).
+## tail (thick end on the right), collar (armor ring over the seam between
+## sections) and socket (body piece with a hole for a chest orb).
 const WYRMS := {
 	"ember": {
 		"head": preload("res://assets/art/wyrm/head_ember.png"),
 		"body": preload("res://assets/art/wyrm/body_ember.png"),
 		"tail": preload("res://assets/art/wyrm/tail_ember.png"),
-		"joint": preload("res://assets/art/wyrm/joint_ember.png"),
+		"collar": preload("res://assets/art/wyrm/collar_ember.png"),
+		"socket": preload("res://assets/art/wyrm/socket_ember.png"),
 	},
 	"frost": {
 		"head": preload("res://assets/art/wyrm/head_frost.png"),
 		"body": preload("res://assets/art/wyrm/body_frost.png"),
 		"tail": preload("res://assets/art/wyrm/tail_frost.png"),
-		"joint": preload("res://assets/art/wyrm/joint_frost.png"),
+		"collar": preload("res://assets/art/wyrm/collar_frost.png"),
+		"socket": preload("res://assets/art/wyrm/socket_frost.png"),
 	},
 	"crypt": {
 		"head": preload("res://assets/art/wyrm/head_crypt.png"),
 		"body": preload("res://assets/art/wyrm/body_crypt.png"),
 		"tail": preload("res://assets/art/wyrm/tail_crypt.png"),
-		"joint": preload("res://assets/art/wyrm/joint_crypt.png"),
+		"collar": preload("res://assets/art/wyrm/collar_crypt.png"),
+		"socket": preload("res://assets/art/wyrm/socket_crypt.png"),
 	},
 	"abyss": {
 		"head": preload("res://assets/art/wyrm/head_abyss.png"),
 		"body": preload("res://assets/art/wyrm/body_abyss.png"),
 		"tail": preload("res://assets/art/wyrm/tail_abyss.png"),
-		"joint": preload("res://assets/art/wyrm/joint_abyss.png"),
+		"collar": preload("res://assets/art/wyrm/collar_abyss.png"),
+		"socket": preload("res://assets/art/wyrm/socket_abyss.png"),
 	},
 }
 

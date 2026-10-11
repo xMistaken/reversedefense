@@ -126,25 +126,6 @@ def save(rgba: np.ndarray, box, path: Path, width: int = 0, height: int = 0, cro
     print(f"  {path.relative_to(ROOT)}  {img.size}")
 
 
-def make_joint(body_path: Path, out_path: Path) -> None:
-    """A soft armored ridge between body sections: a slice of the (seamless)
-    body art, darkened, with feathered edges and its faint haze removed."""
-    a = np.asarray(Image.open(body_path).convert("RGBA")).astype(np.float32)
-    h, w, _ = a.shape
-    period = w / (1 + 2 * BODY_PAD)
-    width = int(period * 0.2)
-    x0 = int(w / 2 - width / 2)
-    j = a[:, x0:x0 + width].copy()
-    alpha = j[..., 3] / 255.0
-    alpha[alpha < 0.55] = 0.0  # drop glow/haze so the ring is just armor
-    profile = np.clip(np.sin(np.linspace(0, np.pi, width, dtype=np.float32)), 0, 1) ** 0.8
-    alpha *= profile[None, :]
-    shade = 0.64 + 0.2 * (1 - profile)[None, :, None]  # darkest in the middle
-    j[..., :3] *= shade
-    j[..., 3] = alpha * 255.0
-    Image.fromarray(np.clip(j, 0, 255).astype(np.uint8), "RGBA").save(out_path)
-
-
 def fade_right(path: Path, share: float = 0.2) -> None:
     """Fade the right end of an image to transparent (tail joins the body)."""
     a = np.asarray(Image.open(path).convert("RGBA")).astype(np.float32)
@@ -178,6 +159,27 @@ def make_seamless(path: Path) -> None:
     print(f"  seamless {path.relative_to(ROOT)}  period {period}px, pad {pad}px")
 
 
+def socket_window(path: Path, aspect: float = 1.35) -> None:
+    """Crop a body-with-socket piece down to a window centred on the socket."""
+    a = np.asarray(Image.open(path).convert("RGBA")).astype(np.float32)
+    h, w, _ = a.shape
+    # The socket is the biggest round, solid dark blob.
+    lum = a[..., :3].mean(axis=2)
+    labels, n = ndimage.label((lum < 70) & (a[..., 3] > 128))
+    best, cx = 0.0, w // 2
+    for i, sl in enumerate(ndimage.find_objects(labels)):
+        bh, bw = sl[0].stop - sl[0].start, sl[1].stop - sl[1].start
+        area = float((labels[sl] == i + 1).sum())
+        if bh < h * 0.15 or not 0.7 < bw / bh < 1.4 or area / (bh * bw) < 0.6:
+            continue
+        if area > best:
+            best, cx = area, (sl[1].start + sl[1].stop) // 2
+    half = int(h * aspect / 2)
+    x0 = min(max(0, cx - half), max(0, w - 2 * half))
+    Image.fromarray(a[:, x0:x0 + 2 * half].astype(np.uint8), "RGBA").save(path)
+    print(f"  socket {path.relative_to(ROOT)}  centre {cx / w:.2f}")
+
+
 def sheet(name: str, names: list, folder: str, merge: int = 18, **kw) -> None:
     src = next(INBOX.glob(name + ".*"))
     rgba = remove_white(Image.open(src), strict_holes=folder == "wyrm")
@@ -196,11 +198,20 @@ def main() -> None:
     sheet("sheet2_bodies", [f"body_{t}" for t in THEMES], "wyrm", merge=10, width=900, crop_x=(0.02, 0.86))
     for t in THEMES:
         make_seamless(OUT / "wyrm" / f"body_{t}.png")
-        make_joint(OUT / "wyrm" / f"body_{t}.png", OUT / "wyrm" / f"joint_{t}.png")
-    # Tails: drop the hollow cut end, then fade the join so it blends into the body.
-    sheet("sheet2b_tails", [f"tail_{t}" for t in THEMES], "wyrm", merge=10, width=520, crop_x=(0.0, 0.93))
+    # Collars sit over the seams between sections. Drop the open rim on the
+    # right (they're drawn as cuffs) and soften that edge.
+    sheet("sheet2c_collars", [f"collar_{t}" for t in THEMES], "wyrm", merge=10, height=300, crop_x=(0.0, 0.76))
     for t in THEMES:
-        fade_right(OUT / "wyrm" / f"tail_{t}.png")
+        fade_right(OUT / "wyrm" / f"collar_{t}.png", 0.18)
+    # Chest sections: a body log with an empty socket for the orb. Cut off the
+    # meat caps, then keep a window around the socket.
+    sheet("sheet2d_sockets", [f"socket_{t}" for t in THEMES], "wyrm", merge=10, height=300, crop_x=(0.06, 0.94))
+    for t in THEMES:
+        socket_window(OUT / "wyrm" / f"socket_{t}.png")
+    # Tails: drop the meat cap on the thick end, then fade the join into the body.
+    sheet("sheet2e_tails", [f"tail_{t}" for t in THEMES], "wyrm", merge=10, height=260, crop_x=(0.0, 0.95))
+    for t in THEMES:
+        fade_right(OUT / "wyrm" / f"tail_{t}.png", 0.1)
     sheet("sheet3_heroes", ["warrior", "mage", "hunter", "priest", "rogue", "warlock"], "heroes", merge=8, height=360)
     sheet("sheet4_items", ["orb_skill", "orb_hero", "shot_axe", "shot_dagger", "shot_arrow", "shot_fire", "shot_holy", "shot_shadow"],
           "items", merge=8, height=240)

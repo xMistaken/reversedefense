@@ -18,7 +18,7 @@ const PLATE_SPACING := 26.0   # distance between plates along the body
 const PLATE_RADIUS := 52.0    # half the body's width
 const RADIUS := PLATE_RADIUS  # used for effect sizes
 const HEAD_GAP := 70.0        # head centre ahead of the first plate
-const ORB_PLATES := 3
+const ORB_PLATES := 8         # chest sections: long enough for the socket art
 const DOT_DURATION := 3.0
 const MEND_RATE := 0.05       # fraction of max HP per second healed into neighbours
 const INTRO_SPEED_MUL := 5.0
@@ -27,12 +27,13 @@ const BODY_HEIGHT := 215.0    # on-screen height of the painted body (incl. spik
 const BODY_SUBDIV := 2        # strip quads per plate (smoother curves)
 const BODY_PAD := 0.08        # wrapped padding each side of the seamless body art (see tools/process_art.py)
 const HEAD_SCALE := 0.5
-const TAIL_SCALE_MUL := 1.7  # tail art scale relative to the body art
-const ORB_SCALE := 0.52
+const TAIL_HEIGHT := 185.0    # on-screen height of the tail art at its thick end
+const ORB_SCALE := 0.42       # sized to sit in the socket's hole
 const TAPER_PLATES := 4       # rearmost plates that narrow into the tail
-const TAPER_MIN := 0.55       # body height at the very end, as a share of BODY_HEIGHT
+const TAPER_MIN := 0.75       # body height at the very end, as a share of BODY_HEIGHT
 const TAIL_OVERLAP_PLATES := 3.0  # how far the tail's faded end reaches over the body
-const JOINT_SCALE_Y := 1.12   # joint rings stand slightly proud of the body
+const COLLAR_SQUEEZE := 0.6   # collars drawn narrower than painted: a band, not a cuff
+const COLLAR_HEIGHT := 0.88   # collars stand slightly proud of the body
 
 ## A section of the body: several plates sharing one HP pool.
 class Segment:
@@ -270,10 +271,10 @@ func _draw() -> void:
 		var s := segments[i]
 		if s.plate_visible[0]:
 			_draw_section(s)
-	# Armored joint rings between sections, on top so they hide the seams.
+	# Armor collars between sections, on top so they hide the seams.
 	for i in range(segments.size() - 1, 0, -1):
 		if segments[i].plate_visible[0]:
-			_draw_joint(segments[i])
+			_draw_collar(segments[i])
 	# The tail goes on top: its faded thick end blends over the last plates.
 	if not segments.is_empty():
 		_draw_tail(segments[-1])
@@ -316,15 +317,20 @@ func _draw_section(s: Segment) -> void:
 	var bands := maxi(1, roundi(period * sc / PLATE_SPACING))
 	var bw := period / bands               # source width of one plate's slice
 	var col := _section_tint(s)
-	var cols := PackedColorArray([col, col, col, col])
 	var flip := _body_flip(s.plate_angle[s.plates / 2])
 	var is_last := s == segments[-1]
 	var tail_end := s.offset - s.length() + PLATE_SPACING * 0.5
 	var half := PLATE_SPACING * 0.5
+	if s.is_orb():
+		# A window of the socket art, centred on the hole.
+		var sock: Texture2D = skin.socket
+		var share := s.length() / (sock.get_width() * BODY_HEIGHT / sock.get_height())
+		_strip(sock, s.offset + half, s.length(), 0.5 + share / 2.0, 0.5 - share / 2.0, BODY_HEIGHT, flip, col, s.plates * 2)
+		bands = 0
 	# Each plate is drawn as a bent strip: its edges follow the path's normal,
 	# so the painted body curves smoothly round bends instead of fanning out.
 	for k in range(s.plates - 1, -1, -1):
-		if not s.plate_visible[k]:
+		if bands == 0 or not s.plate_visible[k]:
 			continue
 		var band := (s.first_plate + k) % bands
 		var x0 := pad + period - (band + 1) * bw  # front of the body is the right of the art
@@ -336,20 +342,21 @@ func _draw_section(s: Segment) -> void:
 			var edge := _body_edge(eo, _taper(is_last, eo - tail_end), flip)
 			var u_front := (x0 + bw * (1.0 - t + 1.0 / BODY_SUBDIV)) / ts.x
 			var u_back := (x0 + bw * (1.0 - t)) / ts.x
-			draw_primitive(PackedVector2Array([prev[0], edge[0], edge[1], prev[1]]), cols,
-				PackedVector2Array([Vector2(u_front, 0), Vector2(u_back, 0), Vector2(u_back, 1), Vector2(u_front, 1)]), tex)
+			_quad(prev, edge, u_front, u_back, col)
 			prev = edge
+	_flush(tex)
 	if s.type == "gilded" or s.type == "mending":
 		var glow := Color(1, 0.8, 0.3, 0.45) if s.type == "gilded" else Color(0.3, 1, 0.4, 0.4)
 		Art.draw_sprite(self, Art.FX.glow, s.pos, 1.2, 0.0, glow)
 	if s.dot_time > 0.0:
 		Art.draw_sprite(self, Art.FX.twirl, s.pos, 0.9, _clock * 6.0, Color(0.7, 0.25, 1.0, 0.7))
-	if s.is_orb() and s.plate_visible[1]:
+	if s.is_orb() and s.plate_visible[s.plates / 2]:
 		var orb: Texture2D = Art.ORB_HERO if s.type == "hero_chest" else Art.ORB_SKILL
 		var pulse := 1.0 + 0.05 * sin(_clock * 6.0 + s.id)
-		Art.draw_sprite(self, Art.FX.glow, s.plate_pos[1], 1.0 * pulse, 0.0,
+		var at := _sample(s.offset - (s.plates - 1) * PLATE_SPACING * 0.5)  # the socket's hole
+		Art.draw_sprite(self, Art.FX.glow, at, 0.8 * pulse, 0.0,
 			Color(1, 0.7, 0.2, 0.5) if s.type == "hero_chest" else Color(0.3, 0.6, 1, 0.5))
-		Art.draw_sprite(self, orb, s.plate_pos[1], ORB_SCALE * pulse, 0.0, Color(1.6, 1.6, 1.6) if s.flash > 0.0 else Color.WHITE)
+		Art.draw_sprite(self, orb, at, ORB_SCALE * pulse, 0.0, Color(1.6, 1.6, 1.6) if s.flash > 0.0 else Color.WHITE)
 
 
 ## Top and bottom edge points of the body at track distance `o`.
@@ -371,52 +378,68 @@ func _taper(is_last: bool, from_end: float) -> float:
 	return BODY_HEIGHT * lerpf(TAPER_MIN, 1.0, clampf(from_end / (TAPER_PLATES * PLATE_SPACING), 0.0, 1.0))
 
 
-## A raised, darker ring of armor at the front of a section, marking where
-## one HP section ends and the next begins.
-func _draw_joint(s: Segment) -> void:
-	var tex: Texture2D = skin.joint
-	var sc := BODY_HEIGHT / (skin.body as Texture2D).get_height()
-	var width := tex.get_width() * sc
-	var flip := _body_flip(s.plate_angle[s.plates / 2])
-	var col := _section_tint(s)
-	var cols := PackedColorArray([col, col, col, col])
-	var mid := s.offset + PLATE_SPACING * 0.5  # the seam with the section ahead
-	var prev := _body_edge(mid + width * 0.5, BODY_HEIGHT * JOINT_SCALE_Y, flip)
-	for j in range(1, 4):
-		var t := j / 3.0
-		var edge := _body_edge(mid + width * (0.5 - t), BODY_HEIGHT * JOINT_SCALE_Y, flip)
-		var u0 := 1.0 - (j - 1) / 3.0
-		var u1 := 1.0 - t
-		draw_primitive(PackedVector2Array([prev[0], edge[0], edge[1], prev[1]]), cols,
-			PackedVector2Array([Vector2(u0, 0), Vector2(u1, 0), Vector2(u1, 1), Vector2(u0, 1)]), tex)
-		prev = edge
-
-
-func _draw_tail(last: Segment) -> void:
-	var tex: Texture2D = skin.tail
-	var body: Texture2D = skin.body
-	var sc := BODY_HEIGHT / body.get_height() * TAIL_SCALE_MUL
-	var height := tex.get_height() * sc
-	var tail_len := tex.get_width() * sc
-	var flip := _body_flip(last.plate_angle[last.plates - 1])
-	var col := _section_tint(last) if last.flash > 0.0 else Color.WHITE
-	var cols := PackedColorArray([col, col, col, col])
-	# The tail bends along the path too. Its faded thick end overlaps the
-	# tapered rear plates; the tip trails behind.
-	var front := last.offset - last.length() + PLATE_SPACING * (0.5 + TAIL_OVERLAP_PLATES)
-	var steps := maxi(4, ceili(tail_len / (PLATE_SPACING * 0.75)))
+## Draws `tex` bent along the track: its right edge (`u_front`) at track
+## distance `front`, its `u_back` column `length` px further back.
+func _strip(tex: Texture2D, front: float, length: float, u_front: float, u_back: float,
+		height: float, flip: bool, col: Color, steps: int) -> void:
 	var prev := _body_edge(front, height, flip)
 	for j in range(1, steps + 1):
 		var t := float(j) / steps
-		var o := front - t * tail_len
+		var o := front - t * length
 		if o < 0.0:
 			break
 		var edge := _body_edge(o, height, flip)
-		var u0 := 1.0 - float(j - 1) / steps
-		var u1 := 1.0 - t
-		draw_primitive(PackedVector2Array([prev[0], edge[0], edge[1], prev[1]]), cols,
-			PackedVector2Array([Vector2(u0, 0), Vector2(u1, 0), Vector2(u1, 1), Vector2(u0, 1)]), tex)
+		_quad(prev, edge, lerpf(u_front, u_back, float(j - 1) / steps), lerpf(u_front, u_back, t), col)
 		prev = edge
+	_flush(tex)
+
+
+# Bent strips are built as one triangle mesh per texture. (Separate
+# draw_primitive calls get batched together and drawn with the wrong texture.)
+var _m_pts := PackedVector2Array()
+var _m_uvs := PackedVector2Array()
+var _m_cols := PackedColorArray()
+var _m_idx := PackedInt32Array()
+
+
+## Adds the quad between two body edges ([top, bottom] each), spanning
+## texture columns `u0` (at `a`) to `u1` (at `b`).
+func _quad(a: PackedVector2Array, b: PackedVector2Array, u0: float, u1: float, col: Color) -> void:
+	var n := _m_pts.size()
+	_m_pts.append_array([a[0], b[0], b[1], a[1]])
+	_m_uvs.append_array([Vector2(u0, 0), Vector2(u1, 0), Vector2(u1, 1), Vector2(u0, 1)])
+	_m_cols.append_array([col, col, col, col])
+	_m_idx.append_array([n, n + 1, n + 2, n, n + 2, n + 3])
+
+
+func _flush(tex: Texture2D) -> void:
+	if not _m_idx.is_empty():
+		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), _m_idx, _m_pts, _m_cols, _m_uvs,
+			PackedInt32Array(), PackedFloat32Array(), tex.get_rid())
+	_m_pts.clear()
+	_m_uvs.clear()
+	_m_cols.clear()
+	_m_idx.clear()
+
+
+## An armor collar over the seam between section `s` and the one ahead.
+func _draw_collar(s: Segment) -> void:
+	var tex: Texture2D = skin.collar
+	var height := BODY_HEIGHT * COLLAR_HEIGHT
+	var width := tex.get_width() * height / tex.get_height() * COLLAR_SQUEEZE
+	var seam := s.offset + PLATE_SPACING * 0.5
+	_strip(tex, seam + width * 0.5, width, 1.0, 0.0, height, _body_flip(s.plate_angle[s.plates / 2]), _section_tint(s), 3)
+
+
+## The tail trails behind the last section, bending along the path. Its
+## faded thick end overlaps the tapered rear plates.
+func _draw_tail(last: Segment) -> void:
+	var tex: Texture2D = skin.tail
+	var tail_len := tex.get_width() * TAIL_HEIGHT / tex.get_height()
+	var front := last.offset - last.length() + PLATE_SPACING * (0.5 + TAIL_OVERLAP_PLATES)
+	var col := _section_tint(last) if last.flash > 0.0 else Color.WHITE
+	_strip(tex, front, tail_len, 1.0, 0.0, TAIL_HEIGHT, _body_flip(last.plate_angle[last.plates - 1]), col,
+		maxi(4, ceili(tail_len / (PLATE_SPACING * 0.75))))
 
 
 func _draw_head() -> void:
