@@ -5,15 +5,17 @@ extends RefCounted
 
 static var hp_growth_per_stage := 1.16
 const BOSS_EVERY := 10
-const SKILL_CHESTS := 14
+const SKILL_CHESTS := 10
+const HERO_CHESTS := 5
 
 var number := 1
+var theme := "ember"
 var mode := 0              # Stage.Mode
 var boss := false
 var title := ""
 var segment_count := 45
 var base_hp := 50.0
-var hp_growth := 0.1       # within the chain: segment i has base_hp * (1 + i * hp_growth)
+var hp_growth := 0.08      # within the chain: section i has base_hp * (1 + i * hp_growth)
 var speed := 55.0
 var bone_chance := 0.15
 var mending_chance := 0.08
@@ -27,7 +29,7 @@ const WAGON_TRACKS := ["serpentine", "sine_descent", "zigzag"]
 const SPEED_PATTERNS := ["steady", "pulse", "surge"]
 ## Track lengths vary by shape; speed is scaled so a wyrm takes about as long
 ## to cross any of them.
-const REFERENCE_LENGTH := 5200.0
+const REFERENCE_LENGTH := 4200.0
 
 
 static func make(n: int) -> StageConfig:
@@ -35,8 +37,10 @@ static func make(n: int) -> StageConfig:
 	c.number = n
 	c.boss = n % BOSS_EVERY == 0
 	c.mode = 0 if n % 2 == 1 else 1
-	c.segment_count = mini(45 + n / 2, 90) + (10 if c.boss else 0)
-	c.base_hp = 50.0 * pow(hp_growth_per_stage, n - 1) * (1.4 if c.boss else 1.0)
+	c.theme = Data.THEME_ORDER[((n - 1) / 10) % Data.THEME_ORDER.size()]
+	# Regular sections plus the chest orbs embedded among them.
+	c.segment_count = mini(14 + n / 5, 30) + (6 if c.boss else 0) + HERO_CHESTS + SKILL_CHESTS
+	c.base_hp = 140.0 * pow(hp_growth_per_stage, n - 1) * (1.4 if c.boss else 1.0)
 	c.speed = 55.0 + minf(n, 60) * 0.3
 	c.bone_chance = minf(0.12 + n * 0.003, 0.35)
 	c.mending_chance = minf(0.06 + n * 0.0015, 0.18)
@@ -47,7 +51,7 @@ static func make(n: int) -> StageConfig:
 	var tracks := CIRCLE_TRACKS if c.mode == 0 else WAGON_TRACKS
 	c.track_kind = tracks[0] if n <= 2 else tracks[rng.randi() % tracks.size()]
 	c.speed_pattern = "steady" if n <= 4 or c.boss else SPEED_PATTERNS[rng.randi() % SPEED_PATTERNS.size()]
-	c.title = ("Stage %d  -  BOSS: Elder Wyrm" % n) if c.boss else ("Stage %d" % n)
+	c.title = ("Stage %d - BOSS" % n) if c.boss else ("Stage %d" % n)
 	return c
 
 
@@ -56,7 +60,7 @@ static func make(n: int) -> StageConfig:
 ## so longer late-game wyrms add HP, not extra power.
 func segment_types(bonus_skill_chests: int) -> Array[String]:
 	var types: Array[String] = []
-	var hero_slots := [3, 11, 21, 33, 46]
+	var hero_slots := [2, 6, 11, 17, 24]
 	var skill_slots := {}
 	var span := segment_count - 2
 	for k in SKILL_CHESTS:
@@ -87,35 +91,46 @@ func segment_types(bonus_skill_chests: int) -> Array[String]:
 	return types
 
 
-## Builds this stage's hidden path. `center` is the party position for circle
-## stages; `wagon_y` is the wagon's row for wagon stages.
-func build_track(view: Vector2, center: Vector2, wagon_y: float) -> Curve2D:
+## Builds this stage's hidden path. It ends at the wall: a ring of radius
+## `wall_radius` around `center` (circle stages) or the line `wall_y` (wagon).
+func build_track(view: Vector2, center: Vector2, wall_y: float, wall_radius: float) -> Curve2D:
+	var c := _shape(view, center, wall_y, wall_radius)
+	var last := c.get_point_position(c.point_count - 1)
+	if mode == 0:
+		c.add_point(center + (last - center).normalized() * (wall_radius + 60.0))
+	else:
+		c.add_point(Vector2(last.x, wall_y - 50.0))
+	return c
+
+
+func _shape(view: Vector2, center: Vector2, wall_y: float, wall_radius: float) -> Curve2D:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = track_seed
 	var cw := rng.randf() < 0.5
 	var start := rng.randf_range(-PI * 0.85, -PI * 0.15)  # enter from the top half
-	var r_outer := view.x * 0.46
-	var left := 130.0
-	var right := view.x - 130.0
-	var top := 330.0
-	var bottom := wagon_y - 380.0
+	var r_outer := view.x * 0.44
+	var r_inner := wall_radius + 105.0
+	var left := 150.0
+	var right := view.x - 150.0
+	var top := 380.0
+	var bottom := wall_y - 170.0
 	match track_kind:
 		"spiral":
-			return TrackBuilder.spiral(center, r_outer, 190.0, rng.randf_range(2.0, 2.6), start, cw)
+			return TrackBuilder.spiral(center, r_outer, r_inner, rng.randf_range(1.2, 1.5), start, cw)
 		"wobble_spiral":
-			return TrackBuilder.spiral(center, r_outer - 20.0, 200.0, rng.randf_range(2.0, 2.4), start, cw,
-				rng.randf_range(18.0, 30.0), float(rng.randi_range(5, 9)))
+			return TrackBuilder.spiral(center, r_outer - 10.0, r_inner, rng.randf_range(1.1, 1.35), start, cw,
+				rng.randf_range(10.0, 16.0), float(rng.randi_range(5, 8)))
 		"square_spiral":
-			return TrackBuilder.square_spiral(center, r_outer - 30.0, 175.0, rng.randf_range(2.0, 2.5), cw)
+			return TrackBuilder.square_spiral(center, r_outer - 20.0, r_inner - 20.0, rng.randf_range(1.25, 1.5), cw)
 		"looping_spiral":
-			return TrackBuilder.looping_spiral(center, r_outer - 30.0, 200.0, rng.randf_range(2.0, 2.4), start, cw)
+			return TrackBuilder.looping_spiral(center, r_outer - 20.0, r_inner, rng.randf_range(1.15, 1.4), start, cw)
 		"serpentine":
-			var rows := rng.randi_range(4, 6)
+			var rows := rng.randi_range(4, 5)
 			return TrackBuilder.serpentine(left, right, top, (bottom - top) / (rows - 1), rows, rng.randf() < 0.5)
 		"sine_descent":
-			return TrackBuilder.sine_descent(left, right, top, bottom, rng.randf_range(3.0, 4.5))
+			return TrackBuilder.sine_descent(left, right, top, bottom, rng.randf_range(2.5, 3.5))
+		"zigzag":
+			return TrackBuilder.zigzag(left, right, top, bottom, rng.randi_range(3, 5))
 		"columns":
 			return TrackBuilder.columns(left, right, top, bottom, 5)
-		"zigzag":
-			return TrackBuilder.zigzag(left, right, top, bottom, rng.randi_range(4, 6))
-	return TrackBuilder.spiral(center, r_outer, 190.0, 2.3, -PI / 2, true)
+	return TrackBuilder.spiral(center, r_outer, r_inner, 1.7, -PI / 2, true)

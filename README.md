@@ -7,9 +7,9 @@ segments recruits heroes and teaches skills (pick 1 of 3, with refreshes).
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for the full design.
 
-| Home | Upgrades | Ritual Circle | End of run |
+| Home | War Wagon (boss) | Ritual Circle | End of run |
 |---|---|---|---|
-| ![](docs/screenshots/home.png) | ![](docs/screenshots/upgrades.png) | ![](docs/screenshots/circle.png) | ![](docs/screenshots/end.png) |
+| ![](docs/screenshots/home.png) | ![](docs/screenshots/wagon.png) | ![](docs/screenshots/circle.png) | ![](docs/screenshots/end.png) |
 
 ## Status
 
@@ -32,8 +32,13 @@ See [`docs/DESIGN.md`](docs/DESIGN.md) for the full design.
 - Automatic save
 
 **Art and audio**
-- Pixel-art heroes, chests and weapons; a glowing particle effect on every
-  hit; a pixel UI, font and sound effects. All are Kenney CC0 packs; see
+- Original cartoon SVG art:
+  - Four wyrm types: fire dragon, ice drake, bone wyrm, sea serpent
+  - Armored body plates and chest orbs
+  - Chibi heroes
+  - Four themed backgrounds
+  - The wall and UI
+- Kenney CC0 particle effects and sounds, and the Lilita One font. See
   [`assets/CREDITS.md`](assets/CREDITS.md).
 - Wyrm paths are hidden and vary per stage: 7 path shapes and 3 speed
   patterns.
@@ -65,7 +70,8 @@ phone (you'll need to allow installing apps from unknown sources).
 | `scripts/pick_panel.gd` | The "pick 1 of 3" chest overlay |
 | `scripts/main.gd` | Home, stage select, upgrades shop, scene switching |
 | `scripts/art.gd`, `scripts/ui_theme.gd`, `scripts/sfx.gd` | Textures, UI theme, sound effects |
-| `tools/import_assets.py` | Rebuilds `assets/` from the downloaded Kenney packs |
+| `tools/hd_art.py` | Generates the SVG wyrm heads, backgrounds and heroes |
+| `tools/import_assets.py` | Rebuilds the Kenney effects and sounds in `assets/` |
 | `tests/track_preview.tscn` | Renders every (normally hidden) path shape |
 | `tests/sim_test.tscn` | Headless bot: smoke test, or a full farming "career" to stage 100 |
 | `tests/screenshot.tscn` | Captures preview screenshots |

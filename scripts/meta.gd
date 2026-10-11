@@ -27,6 +27,8 @@ var ARMORY := {
 		"cost": 600.0, "growth": 2.2, "max": 5},
 	"treasure": {"name": "Treasure Hunter", "desc": "+2 extra skill chests per stage",
 		"cost": 800.0, "growth": 1.9, "max": 8},
+	"fortify": {"name": "Fortify", "desc": "+25% wall HP",
+		"cost": 400.0, "growth": 1.55, "max": 12},
 	"head_start": {"name": "Head Start", "desc": "Start each run with +1 random skill",
 		"cost": 1200.0, "growth": 2.4, "max": 5},
 }
@@ -71,6 +73,10 @@ func crit_mult() -> float:
 
 func gold_mult() -> float:
 	return 1.0 + 0.1 * armory_level("fortune")
+
+
+func wall_mult() -> float:
+	return 1.0 + 0.25 * armory_level("fortify")
 
 
 func bonus_refreshes() -> int:

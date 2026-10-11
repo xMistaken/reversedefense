@@ -47,8 +47,8 @@ func show_home() -> void:
 	var s := _screen()
 	var box: VBoxContainer = s[1]
 	var head := TextureRect.new()
-	head.texture = Art.WYRM_HEAD
-	head.custom_minimum_size = Vector2(0, 170)
+	head.texture = Art.WYRM_HEADS.dragon
+	head.custom_minimum_size = Vector2(0, 240)
 	head.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	head.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	box.add_child(head)
@@ -73,14 +73,14 @@ func show_home() -> void:
 		b.text = "%s\nLv %d" % [h.name, Meta.hero_level(id)]
 		b.icon = Art.HEROES[id]
 		b.expand_icon = true
-		b.add_theme_constant_override("icon_max_width", 64)
+		b.add_theme_constant_override("icon_max_width", 72)
+		b.add_theme_stylebox_override("pressed", UITheme.blue_box())
+		b.add_theme_stylebox_override("hover_pressed", UITheme.blue_box())
 		b.toggle_mode = true
 		b.button_group = group
 		b.button_pressed = id == Meta.selected_hero
 		b.custom_minimum_size = Vector2(320, 140)
 		b.add_theme_font_size_override("font_size", 30)
-		for c in ["font_color", "font_pressed_color", "font_hover_color", "font_hover_pressed_color", "font_focus_color"]:
-			b.add_theme_color_override(c, h.color)
 		b.pressed.connect(func() -> void:
 			Meta.selected_hero = id
 			Meta.save_game()
@@ -89,7 +89,7 @@ func show_home() -> void:
 	box.add_child(hint)
 
 	var next := Meta.next_stage()
-	box.add_child(_button("PLAY  %s" % StageConfig.make(next).title, func() -> void: start_stage(next), 50, Color(0.95, 0.75, 0.25)))
+	box.add_child(_button("PLAY  %s" % StageConfig.make(next).title, func() -> void: start_stage(next), 54))
 	box.add_child(_button("Choose stage (farm gold)", show_stage_select))
 	box.add_child(_button("Upgrades", show_upgrades))
 	_swap(s[0])
@@ -196,10 +196,10 @@ func _screen(scroll := false) -> Array:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.theme = UITheme.get_theme()
 	var bg := TextureRect.new()
-	bg.texture = Art.ground_texture(Vector2(1080, 2400), "dirt", 6)
+	bg.texture = Art.BACKGROUNDS.crypt
 	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	bg.modulate = Color(0.35, 0.3, 0.35)
+	bg.modulate = Color(0.75, 0.7, 0.8)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(bg)
 	var box := VBoxContainer.new()

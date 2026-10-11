@@ -1,33 +1,44 @@
 class_name Wyrm
 extends Node2D
-## The segmented creature. An indestructible head leads a chain of body
-## segments, each at a distance ("offset") along the track. The rearmost
-## segment drives the chain forward. The chain always stays connected: when a
-## segment is destroyed, everything ahead of it (including the head) slides
-## back to close the gap. Destroy every body segment to win; if the head
-## reaches the end of the track, you lose.
+## The wyrm: an indestructible head leading a long, continuous body made of
+## overlapping plates. Plates are grouped into **sections** (class Segment);
+## each section has one HP pool. Chest sections are glowing orbs embedded in
+## the body.
+##
+## Sections sit at distances ("offsets") along the hidden track. The rearmost
+## section drives the chain forward. The chain always stays connected: when a
+## section is destroyed, everything ahead of it (including the head) slides
+## back to close the gap. When the head reaches the end of the track it stops
+## at the wall and chews on it (see `at_wall()`); the stage drains wall HP.
 
 signal segment_destroyed(seg: Segment)
-signal reached_end
 signal cleared
 
-const SPACING := 64.0
-const RADIUS := 30.0
+const PLATE_SPACING := 26.0   # distance between plates along the body
+const PLATE_RADIUS := 44.0    # half the body's width
+const RADIUS := PLATE_RADIUS  # used for effect sizes
+const HEAD_GAP := 70.0        # head centre ahead of the first plate
+const ORB_PLATES := 3
 const DOT_DURATION := 3.0
-const MEND_RATE := 0.05  # fraction of max HP per second healed into neighbours
+const MEND_RATE := 0.05       # fraction of max HP per second healed into neighbours
 const INTRO_SPEED_MUL := 5.0
 const RETRACT_SPEED := 650.0  # how fast the front slides back to close a gap
-const HEAD_RADIUS := 40.0
 
+## A section of the body: several plates sharing one HP pool.
 class Segment:
 	var id := 0
 	var type := "flesh"
+	var plates := 6
 	var hp := 1.0
 	var max_hp := 1.0
 	var armor := 0.0
-	var offset := 0.0
-	var pos := Vector2.ZERO
+	var offset := 0.0          # front plate's distance along the track
+	var pos := Vector2.ZERO    # middle plate (labels, effects, targeting)
 	var dir := Vector2.RIGHT
+	var plate_pos := PackedVector2Array()
+	var plate_angle := PackedFloat32Array()
+	var plate_visible := PackedByteArray()
+	var bound := 0.0           # broad-phase radius around `pos`
 	var dot := 0.0
 	var dot_time := 0.0
 	var flash := 0.0
@@ -35,6 +46,22 @@ class Segment:
 
 	func on_track() -> bool:
 		return offset >= 0.0
+
+	func length() -> float:
+		return plates * PLATE_SPACING
+
+	func is_orb() -> bool:
+		return type == "hero_chest" or type == "skill_chest"
+
+	## Does a circle at `p` with radius `r` touch any visible plate?
+	func hit_test(p: Vector2, r: float) -> bool:
+		if not on_track() or p.distance_squared_to(pos) > (bound + r) * (bound + r):
+			return false
+		var rr := (PLATE_RADIUS + r) * (PLATE_RADIUS + r)
+		for k in plates:
+			if plate_visible[k] and p.distance_squared_to(plate_pos[k]) <= rr:
+				return true
+		return false
 
 var curve: Curve2D
 var length := 0.0
@@ -49,6 +76,7 @@ var finished := false
 var intro_distance := 0.0
 var damage_dealt := 0.0
 var speed_pattern := "steady"
+var skin: Dictionary = {}
 var _clock := 0.0
 var _track_points: PackedVector2Array
 
@@ -57,17 +85,24 @@ func setup(track: Curve2D, types: Array[String], base_hp: float, hp_growth: floa
 	curve = track
 	length = curve.get_baked_length()
 	_track_points = curve.get_baked_points()
-	intro_distance = TrackBuilder.ENTRY + 260.0
+	intro_distance = TrackBuilder.ENTRY + 300.0
 	segments.clear()
+	var back := -HEAD_GAP
 	for i in types.size():
 		var s := Segment.new()
 		s.id = i
 		s.type = types[i]
 		var def: Dictionary = Data.SEGMENTS[s.type]
+		s.plates = ORB_PLATES if s.is_orb() else 5 + randi() % 3
 		s.max_hp = round(base_hp * (1.0 + i * hp_growth) * def.hp_mul)
 		s.hp = s.max_hp
 		s.armor = def.armor
-		s.offset = -(i + 1) * SPACING
+		s.offset = back
+		back -= s.length()
+		s.plate_pos.resize(s.plates)
+		s.plate_angle.resize(s.plates)
+		s.plate_visible.resize(s.plates)
+		s.bound = s.plates * PLATE_SPACING / 2.0 + PLATE_RADIUS
 		segments.append(s)
 	head_offset = 0.0
 	_update_positions()
@@ -76,6 +111,11 @@ func setup(track: Curve2D, types: Array[String], base_hp: float, hp_growth: floa
 ## 0..1: how close the head is to the end of the track.
 func danger() -> float:
 	return clampf(head_offset / length, 0.0, 1.0)
+
+
+## True while the head is pressed against the wall at the end of the track.
+func at_wall() -> bool:
+	return not segments.is_empty() and head_offset >= length - 1.0
 
 
 func push_back(distance: float) -> void:
@@ -110,13 +150,14 @@ func apply_dot(seg: Segment, dps: float, spread: int) -> void:
 
 
 func _process(delta: float) -> void:
+	_clock += delta
 	if finished or segments.is_empty():
+		queue_redraw()
 		return
 	var speed := base_speed * speed_mul
 	if slow_timer > 0.0:
 		slow_timer -= delta
 		speed *= 0.5
-	_clock += delta
 	if head_offset < intro_distance:
 		speed *= INTRO_SPEED_MUL
 	else:
@@ -126,13 +167,20 @@ func _process(delta: float) -> void:
 			"surge":  # crawls slowly, then lunges for 1.2s every 6s
 				speed *= 2.6 if fmod(_clock, 6.0) > 4.8 else 0.68
 
-	# Tail drives. Everything ahead stays one SPACING apart: pushed forward
-	# when touching, sliding back when a gap opened in front of it.
+	# Tail drives. Each section stays butted against the one behind it:
+	# pushed forward when touching, sliding back when a gap opened.
 	segments[-1].offset += speed * delta
 	var retract := RETRACT_SPEED * delta
 	for i in range(segments.size() - 2, -1, -1):
-		segments[i].offset = _follow(segments[i].offset, segments[i + 1].offset + SPACING, retract)
-	head_offset = _follow(head_offset, segments[0].offset + SPACING, retract)
+		segments[i].offset = _follow(segments[i].offset, segments[i + 1].offset + segments[i].length(), retract)
+	head_offset = _follow(head_offset, segments[0].offset + HEAD_GAP, retract)
+	# The wall stops the head; the body piles up behind it.
+	if head_offset > length:
+		head_offset = length
+		var limit := head_offset - HEAD_GAP
+		for s in segments:
+			s.offset = minf(s.offset, limit)
+			limit = s.offset - s.length()
 	_update_positions()
 
 	# Damage over time, mending and hit flashes.
@@ -151,10 +199,6 @@ func _process(delta: float) -> void:
 			damage_dealt += s.dot * delta
 			if s.hp <= 0.0:
 				_kill(s)
-
-	if head_offset >= length:
-		finished = true
-		reached_end.emit()
 	queue_redraw()
 
 
@@ -164,18 +208,27 @@ func _follow(current: float, target: float, retract: float) -> float:
 	return maxf(target, current - retract)
 
 
+func _sample(o: float) -> Vector2:
+	return curve.sample_baked(clampf(o, 0.0, length))
+
+
 func _update_positions() -> void:
-	var ho := clampf(head_offset, 0.0, length)
-	head_pos = curve.sample_baked(ho)
-	var h_ahead := curve.sample_baked(minf(ho + 4.0, length))
-	if h_ahead != head_pos:
-		head_dir = (h_ahead - head_pos).normalized()
+	head_pos = _sample(head_offset)
+	var h_ahead := _sample(head_offset + 6.0)
+	var h_behind := _sample(head_offset - 6.0)
+	if h_ahead != h_behind:
+		head_dir = (h_ahead - h_behind).normalized()
 	for s in segments:
-		var o := clampf(s.offset, 0.0, length)
-		s.pos = curve.sample_baked(o)
-		var ahead := curve.sample_baked(minf(o + 4.0, length))
-		if ahead != s.pos:
-			s.dir = (ahead - s.pos).normalized()
+		for k in s.plates:
+			var o := s.offset - k * PLATE_SPACING
+			var p := _sample(o)
+			s.plate_pos[k] = p
+			s.plate_visible[k] = 1 if o >= 0.0 else 0
+			var d := _sample(o + 6.0) - _sample(o - 6.0)
+			s.plate_angle[k] = d.angle() if d != Vector2.ZERO else 0.0
+		var mid := s.plates / 2
+		s.pos = s.plate_pos[mid]
+		s.dir = Vector2.from_angle(s.plate_angle[mid])
 
 
 func _kill(seg: Segment) -> void:
@@ -192,51 +245,73 @@ func _kill(seg: Segment) -> void:
 # --- Drawing ---------------------------------------------------------------
 
 func _draw() -> void:
-	# The path itself is hidden; only the exit portal the head is heading for shows.
-	var end := _track_points[-1]
-	Art.draw_sprite(self, Art.FX.glow, end, 1.1, 0.0, Color(0.6, 0.05, 0.15, 0.9))
-	Art.draw_sprite(self, Art.FX.twirl, end, 0.85, -_clock * 2.0, Color(0.9, 0.2, 0.35))
-	Art.draw_sprite(self, Art.FX.twirl, end, 0.55, _clock * 3.0, Color(0.15, 0.0, 0.1))
-
 	var font := Art.FONT
+	# Tail first so plates nearer the head overlap the ones behind them.
 	for i in range(segments.size() - 1, -1, -1):
 		var s := segments[i]
+		if s.on_track() or s.plate_visible[0]:
+			_draw_section(s)
+	if head_offset >= -40.0 and not segments.is_empty():
+		_draw_head()
+	for s in segments:
 		if s.on_track():
-			_draw_segment(s, font)
-	if head_offset >= 0.0 and not segments.is_empty():
-		var flip := head_dir.x < 0.0
-		Art.draw_sprite(self, Art.WYRM_HEAD, head_pos, Art.SPRITE_SCALE, head_dir.angle(), Color.WHITE, flip)
+			_draw_label(s, font)
 
 
-func _draw_segment(s: Segment, font: Font) -> void:
-	var col: Color = Data.SEGMENTS[s.type].color
-	if s.flash > 0.0:
-		col = col.lerp(Color.WHITE, 0.7)
-	var angle := s.dir.angle()
-	var flip := s.dir.x < 0.0
-	if s.type == "gilded" or s.type == "mending":
-		var pulse := 0.85 + 0.15 * sin(_clock * 5.0 + s.id)
-		var glow := Color(1, 0.85, 0.3, 0.55) if s.type == "gilded" else Color(0.3, 1, 0.4, 0.45)
-		Art.draw_sprite(self, Art.FX.glow, s.pos, 0.75 * pulse, 0.0, glow)
-	Art.draw_sprite(self, Art.WYRM_SEGMENT, s.pos, 4.0, angle, col, flip)
-	if s.dot_time > 0.0:
-		Art.draw_sprite(self, Art.FX.twirl, s.pos, 0.5, _clock * 6.0, Color(0.7, 0.25, 1.0, 0.8))
-
+func _plate_color(s: Segment) -> Color:
+	var col: Color = skin.get("body", Color(0.8, 0.82, 0.88))
 	match s.type:
 		"bone":
-			Art.draw_sprite(self, Art.WYRM_PLATE, s.pos, 4.0, angle, Color.WHITE, flip)
-		"hero_chest":
-			Art.draw_sprite(self, Art.ITEMS.chest_hero, s.pos + Vector2(0, -4), 3.0)
-		"skill_chest":
-			Art.draw_sprite(self, Art.ITEMS.chest_skill, s.pos + Vector2(0, -4), 3.0)
+			col = Color(0.93, 0.9, 0.8)
+		"mending":
+			col = col.lerp(Color(0.35, 0.9, 0.45), 0.55)
+		"gilded":
+			col = Color(1.0, 0.82, 0.3)
+	if s.flash > 0.0:
+		col = col.lerp(Color.WHITE, 0.7)
+	return col
 
-	var txt := Meta.fmt(ceilf(s.hp))
-	if s.type == "hero_chest" or s.type == "skill_chest":
+
+func _draw_section(s: Segment) -> void:
+	var col := _plate_color(s)
+	var accent: Color = skin.get("accent", Color(0.3, 0.85, 1.0))
+	if s.type == "mending":
+		accent = Color(0.5, 1.0, 0.5)
+	elif s.type == "gilded":
+		accent = Color(1.0, 0.95, 0.6)
+	var plate_tex: Texture2D = Art.WYRM_PLATE_BONE if s.type == "bone" else Art.WYRM_PLATE
+	for k in range(s.plates - 1, -1, -1):
+		if not s.plate_visible[k]:
+			continue
+		var a := s.plate_angle[k]
+		var flip := absf(wrapf(a, -PI, PI)) > PI / 2
+		Art.draw_sprite(self, plate_tex, s.plate_pos[k], Art.WYRM_SCALE, a, col, flip)
+		Art.draw_sprite(self, Art.WYRM_PLATE_ACCENT, s.plate_pos[k], Art.WYRM_SCALE, a, accent, flip)
+	if s.dot_time > 0.0:
+		Art.draw_sprite(self, Art.FX.twirl, s.pos, 0.9, _clock * 6.0, Color(0.7, 0.25, 1.0, 0.7))
+	if s.is_orb() and s.plate_visible[1]:
+		var orb: Texture2D = Art.ORB_HERO if s.type == "hero_chest" else Art.ORB_SKILL
+		var pulse := 1.0 + 0.05 * sin(_clock * 6.0 + s.id)
+		Art.draw_sprite(self, orb, s.plate_pos[1], Art.WYRM_SCALE * pulse, 0.0, Color(1.4, 1.4, 1.4) if s.flash > 0.0 else Color.WHITE)
+
+
+func _draw_head() -> void:
+	var flip := head_dir.x < 0.0
+	var bite := 0.0
+	if at_wall():
+		bite = absf(sin(_clock * 9.0)) * 0.18
+	var head_tex: Texture2D = skin.get("head", Art.WYRM_HEADS.dragon)
+	Art.draw_sprite(self, head_tex, head_pos, Art.WYRM_SCALE * (1.0 + bite * 0.4), head_dir.angle() + (bite if not flip else -bite), Color.WHITE, flip)
+
+
+func _draw_label(s: Segment, font: Font) -> void:
+	if s.is_orb():
 		if s.hp < s.max_hp:
-			var bar := Rect2(s.pos + Vector2(-RADIUS, RADIUS + 4), Vector2(RADIUS * 2.0, 7))
-			draw_rect(bar, Color(0.1, 0.05, 0.05, 0.85))
-			draw_rect(Rect2(bar.position, Vector2(bar.size.x * s.hp / s.max_hp, 7)), Color(0.95, 0.25, 0.2))
+			var bar := Rect2(s.pos + Vector2(-46, PLATE_RADIUS + 6), Vector2(92, 10))
+			draw_rect(bar.grow(2), Color(0.1, 0.05, 0.05, 0.9))
+			draw_rect(Rect2(bar.position, Vector2(bar.size.x * s.hp / s.max_hp, 10)), Color(1.0, 0.3, 0.2))
 		return
-	var p := s.pos + Vector2(-RADIUS, 9)
-	draw_string_outline(font, p, txt, HORIZONTAL_ALIGNMENT_CENTER, RADIUS * 2.0, 20, 6, Color(0.1, 0.05, 0.08))
-	draw_string(font, p, txt, HORIZONTAL_ALIGNMENT_CENTER, RADIUS * 2.0, 20, Color.WHITE)
+	var txt := Meta.fmt(ceilf(s.hp))
+	var p := s.pos + Vector2(-90, 12)
+	draw_string_outline(font, p, txt, HORIZONTAL_ALIGNMENT_CENTER, 180, 34, 10, Color(0.08, 0.06, 0.1))
+	draw_string(font, p, txt, HORIZONTAL_ALIGNMENT_CENTER, 180, 34, Color.WHITE)

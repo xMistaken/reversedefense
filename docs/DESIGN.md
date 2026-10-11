@@ -70,18 +70,25 @@ farming.
 
 ## 5. The Wyrm
 
-- An indestructible **head** leads a chain of body **segments** along a path
-  (`Path2D`), with fixed spacing between them. The head can't be targeted,
-  and projectiles pass through it.
-- Each body segment has its own HP. The **rearmost segment drives** the chain
-  forward, and the chain always stays connected: when a segment is
-  destroyed, everything ahead of it, including the head, **slides back** to
-  close the gap. Destroying the segment right behind the head pulls the head
-  back one segment, so killing segments at the front buys the most time.
-- The wyrm rushes in quickly at the start of a stage, then crawls at a steady
-  speed. Skills can slow it, and the Priest can shove it back.
-- **Win condition:** destroy **every** body segment.
-- **Lose condition:** the head reaches the end of the track.
+- An indestructible **head** leads a long, continuous **body of overlapping
+  armored plates**. The plates are grouped into **sections**: several plates
+  (5–7) share one HP pool, and the HP number shows on the section. Chests are
+  glowing **orbs** embedded in the body: a blue star for a skill, an orange
+  crown for a hero.
+- The **rearmost section drives** the chain forward, and the chain always
+  stays connected: when a section is destroyed, everything ahead of it,
+  including the head, **slides back** to close the gap.
+- **The wall:** the path ends at a wall. On War Wagon stages it's a rampart
+  in front of the party; on Ritual Circle stages it's a ring of stones.
+  - When the head reaches the wall, it stops and **chews on it**, draining wall
+    HP. The longer the remaining wyrm, the harder it bites.
+  - Destroying front sections pulls the head off the wall.
+  - The Fortify upgrade raises wall HP.
+- **Win condition:** destroy every section. **Lose condition:** the wall
+  breaks.
+- **Themes:** every 10 stages the scenery and wyrm change: Ember Canyon (fire
+  dragon), Frozen Halls (ice drake), Bone Crypt (bone wyrm) and Abyssal Deep
+  (sea serpent), then the cycle repeats. Bosses are darker and tougher.
 
 ### Segment types
 
@@ -175,6 +182,7 @@ Keen Eye (+crit), Chilling Aura (slower wyrm).
 | Fortune | +10% gold earned | none |
 | Insight | +1 starting refresh | 5 |
 | Treasure Hunter | +2 skill chests per stage | 8 |
+| Fortify | +25% wall HP | 12 |
 | Head Start | Start each run with +1 random skill | 5 |
 
 Progress is saved automatically after every run and purchase.

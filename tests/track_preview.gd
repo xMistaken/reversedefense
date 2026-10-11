@@ -13,13 +13,13 @@ func _ready() -> void:
 			out_path = arg.trim_prefix("out=")
 	var view := Vector2(1080, 1920)
 	var center := Vector2(view.x / 2.0, view.y * 0.52)
-	var wagon_y := view.y - 230.0
+	var wall_y := view.y - 430.0
 	var kinds := StageConfig.CIRCLE_TRACKS + StageConfig.WAGON_TRACKS + ["columns"]
 	for i in kinds.size():
 		var cfg := StageConfig.make(1 if i < 4 else 2)
 		cfg.track_kind = kinds[i]
 		cfg.track_seed = 12345 + i
-		_curves.append([kinds[i], cfg.build_track(view, center, wagon_y), i < 4])
+		_curves.append([kinds[i], cfg.build_track(view, center, wall_y, 205.0), i < 4])
 	await RenderingServer.frame_post_draw
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(out_path)

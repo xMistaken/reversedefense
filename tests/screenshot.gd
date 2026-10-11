@@ -63,7 +63,7 @@ func _process(_delta: float) -> void:
 		2:
 			if _frames == 10:
 				await _shot("stages")
-				_main.start_stage(15)
+				_main.start_stage(13)
 				_next_step()
 		3:
 			if _frames == 60 * 30:

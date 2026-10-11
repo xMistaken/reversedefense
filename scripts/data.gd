@@ -28,7 +28,7 @@ var HEROES := {
 	"warrior": {
 		"name": "Warrior", "color": Color(0.82, 0.32, 0.24),
 		"blurb": "Thrown axes that cut through 2 segments.",
-		"shot": {"sprite": "axe", "spin": 14.0, "scale": 3.5},
+		"shot": {"sprite": "axe", "spin": 14.0, "scale": 0.9},
 		"stats": {"damage": 16.0, "cooldown": 0.6, "speed": 1200.0, "pierce": 2, "size": 16.0},
 	},
 	"mage": {
@@ -40,7 +40,7 @@ var HEROES := {
 	"hunter": {
 		"name": "Hunter", "color": Color(0.45, 0.8, 0.3),
 		"blurb": "Rapid-fire arrows.",
-		"shot": {"sprite": "arrow", "orient": PI / 2, "scale": 3.0},
+		"shot": {"sprite": "arrow", "orient": PI / 2, "scale": 0.75},
 		"stats": {"damage": 6.0, "cooldown": 0.18, "speed": 1900.0, "size": 9.0},
 	},
 	"priest": {
@@ -52,7 +52,7 @@ var HEROES := {
 	"rogue": {
 		"name": "Rogue", "color": Color(1.0, 0.93, 0.35),
 		"blurb": "Fans of 3 daggers with a high crit chance.",
-		"shot": {"sprite": "dagger", "orient": PI / 2, "scale": 3.0},
+		"shot": {"sprite": "dagger", "orient": PI / 2, "scale": 0.75},
 		"stats": {"damage": 6.0, "cooldown": 0.5, "count": 3, "spread": 0.22, "crit": 0.25, "size": 10.0},
 	},
 	"warlock": {
@@ -156,7 +156,17 @@ var RARITIES := [
 ]
 const LEGENDARY_COLOR := Color(1.0, 0.55, 0.1)
 
-## hp_mul scales the segment's HP; armor reduces damage taken.
+## Every 10 stages the scenery and the wyrm change. `body`/`accent` tint the
+## wyrm's plates.
+var THEMES := {
+	"ember": {"name": "Ember Canyon", "head": "dragon", "body": Color(1.0, 0.6, 0.52), "accent": Color(1.0, 0.75, 0.2)},
+	"frost": {"name": "Frozen Halls", "head": "ice", "body": Color(0.92, 0.96, 1.0), "accent": Color(0.3, 0.85, 1.0)},
+	"crypt": {"name": "Bone Crypt", "head": "bone", "body": Color(0.95, 0.9, 0.78), "accent": Color(0.55, 1.0, 0.45)},
+	"abyss": {"name": "Abyssal Deep", "head": "serpent", "body": Color(0.45, 0.68, 1.0), "accent": Color(0.4, 1.0, 0.95)},
+}
+const THEME_ORDER := ["ember", "frost", "crypt", "abyss"]
+
+## hp_mul scales the section's HP; armor reduces damage taken.
 var SEGMENTS := {
 	"flesh": {"color": Color(0.62, 0.24, 0.32), "hp_mul": 1.0, "armor": 0.0},
 	"bone": {"color": Color(0.86, 0.83, 0.72), "hp_mul": 1.2, "armor": 0.5},
