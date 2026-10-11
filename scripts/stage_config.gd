@@ -94,6 +94,7 @@ func segment_types(bonus_skill_chests: int) -> Array[String]:
 ## Builds this stage's hidden path. It ends at the wall: a ring of radius
 ## `wall_radius` around `center` (circle stages) or the line `wall_y` (wagon).
 func build_track(view: Vector2, center: Vector2, wall_y: float, wall_radius: float) -> Curve2D:
+	TrackBuilder.view = view
 	var c := _shape(view, center, wall_y, wall_radius)
 	var last := c.get_point_position(c.point_count - 1)
 	if mode == 0:
@@ -108,7 +109,7 @@ func _shape(view: Vector2, center: Vector2, wall_y: float, wall_radius: float) -
 	rng.seed = track_seed
 	var cw := rng.randf() < 0.5
 	var start := rng.randf_range(-PI * 0.85, -PI * 0.15)  # enter from the top half
-	var r_outer := view.x * 0.41
+	var r_outer := view.x * 0.4
 	var r_inner := wall_radius + 105.0
 	var left := 150.0
 	var right := view.x - 150.0
@@ -116,14 +117,14 @@ func _shape(view: Vector2, center: Vector2, wall_y: float, wall_radius: float) -
 	var bottom := wall_y - 170.0
 	match track_kind:
 		"spiral":
-			return TrackBuilder.spiral(center, r_outer, r_inner, rng.randf_range(1.2, 1.5), start, cw)
+			return TrackBuilder.spiral(center, r_outer, r_inner, rng.randf_range(0.95, 1.15), start, cw)
 		"wobble_spiral":
-			return TrackBuilder.spiral(center, r_outer - 10.0, r_inner, rng.randf_range(1.1, 1.35), start, cw,
+			return TrackBuilder.spiral(center, r_outer - 10.0, r_inner, rng.randf_range(0.9, 1.1), start, cw,
 				rng.randf_range(10.0, 16.0), float(rng.randi_range(5, 8)))
 		"square_spiral":
-			return TrackBuilder.square_spiral(center, r_outer - 20.0, r_inner - 20.0, rng.randf_range(1.25, 1.5), cw)
+			return TrackBuilder.square_spiral(center, r_outer - 20.0, r_inner - 20.0, rng.randf_range(1.0, 1.25), cw)
 		"looping_spiral":
-			return TrackBuilder.looping_spiral(center, r_outer - 20.0, r_inner, rng.randf_range(1.15, 1.4), start, cw)
+			return TrackBuilder.looping_spiral(center, r_outer - 20.0, r_inner, rng.randf_range(0.9, 1.1), start, cw)
 		"serpentine":
 			var rows := rng.randi_range(4, 5)
 			return TrackBuilder.serpentine(left, right, top, (bottom - top) / (rows - 1), rows, rng.randf() < 0.5)

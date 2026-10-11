@@ -6,6 +6,25 @@ extends RefCounted
 
 const ENTRY := 160.0  # how far off-screen the track starts
 
+## Screen size, set by StageConfig before building, so spirals can start just
+## off-screen (sections become hittable only once they can be seen).
+static var view := Vector2(1080, 1920)
+
+
+## Point on the ray from `from` along `dir` that lies ENTRY px beyond the screen edge.
+static func offscreen_point(from: Vector2, dir: Vector2) -> Vector2:
+	var bounds := Rect2(Vector2(-ENTRY, -ENTRY), view + Vector2(ENTRY, ENTRY) * 2.0)
+	var t := INF
+	if dir.x > 0.001:
+		t = minf(t, (bounds.end.x - from.x) / dir.x)
+	elif dir.x < -0.001:
+		t = minf(t, (bounds.position.x - from.x) / dir.x)
+	if dir.y > 0.001:
+		t = minf(t, (bounds.end.y - from.y) / dir.y)
+	elif dir.y < -0.001:
+		t = minf(t, (bounds.position.y - from.y) / dir.y)
+	return from + dir * t
+
 
 # --- Ritual Circle shapes ----------------------------------------------------
 
@@ -14,7 +33,7 @@ static func spiral(center: Vector2, r_outer: float, r_inner: float, turns: float
 		start_angle: float, clockwise: bool, wobble := 0.0, wobble_freq := 6.0) -> Curve2D:
 	var c := Curve2D.new()
 	var dir := 1.0 if clockwise else -1.0
-	c.add_point(center + Vector2.from_angle(start_angle) * 1400.0)
+	c.add_point(offscreen_point(center, Vector2.from_angle(start_angle)))
 	var steps := int(turns * 140)
 	for i in steps + 1:
 		var t := float(i) / steps
@@ -46,7 +65,7 @@ static func looping_spiral(center: Vector2, r_outer: float, r_inner: float, turn
 		start_angle: float, clockwise: bool) -> Curve2D:
 	var c := Curve2D.new()
 	var dir := 1.0 if clockwise else -1.0
-	c.add_point(center + Vector2.from_angle(start_angle) * 1400.0)
+	c.add_point(offscreen_point(center, Vector2.from_angle(start_angle)))
 	var steps := int(turns * 160)
 	for i in steps + 1:
 		var t := float(i) / steps

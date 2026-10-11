@@ -7,9 +7,9 @@ segments recruits heroes and teaches skills (pick 1 of 3, with refreshes).
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for the full design.
 
-| Home | War Wagon (boss) | Hero ranks | End of run |
+| Home | War Wagon | Ritual Circle | Wyrms |
 |---|---|---|---|
-| ![](docs/screenshots/home.png) | ![](docs/screenshots/wagon.png) | ![](docs/screenshots/hero.png) | ![](docs/screenshots/end.png) |
+| ![](docs/screenshots/home.png) | ![](docs/screenshots/wagon.png) | ![](docs/screenshots/circle.png) | ![](docs/screenshots/wyrms.png) |
 
 ## Status
 
@@ -34,12 +34,14 @@ See [`docs/DESIGN.md`](docs/DESIGN.md) for the full design.
 - Automatic save
 
 **Art and audio**
-- Original cartoon SVG art:
-  - Four wyrm types: fire dragon, ice drake, bone wyrm, sea serpent
-  - Armored body plates and chest orbs
-  - Chibi heroes
-  - Four themed backgrounds
-  - The wall and UI
+- Painted artwork generated with Gemini from
+  [`docs/ART_PROMPTS.md`](docs/ART_PROMPTS.md):
+  - Four themed wyrms (head, body and tail each)
+  - Six chibi heroes, orbs and projectiles
+  - Castle wall, war wagon, rune ring
+  - Four stage floors and title art
+- The wyrm's body is drawn from consecutive slices of the painted body, laid
+  along the path, so it bends smoothly.
 - Kenney CC0 particle effects and sounds, and the Lilita One font. See
   [`assets/CREDITS.md`](assets/CREDITS.md).
 - Wyrm paths are hidden and vary per stage: 7 path shapes and 3 speed
@@ -72,7 +74,8 @@ phone (you'll need to allow installing apps from unknown sources).
 | `scripts/pick_panel.gd` | The "pick 1 of 3" chest overlay |
 | `scripts/main.gd` | Home, stage select, upgrades shop, scene switching |
 | `scripts/art.gd`, `scripts/ui_theme.gd`, `scripts/sfx.gd` | Textures, UI theme, sound effects |
-| `tools/hd_art.py` | Generates the SVG wyrm heads, backgrounds and heroes |
+| `tools/process_art.py` | Turns the art in `art_inbox/` into game sprites (background removal, slicing sheets) |
+| `tests/wyrm_preview.tscn` | Renders all four wyrms on a test path |
 | `tools/import_assets.py` | Rebuilds the Kenney effects and sounds in `assets/` |
 | `tests/track_preview.tscn` | Renders every (normally hidden) path shape |
 | `tests/sim_test.tscn` | Headless bot: smoke test, or a full farming "career" to stage 100 |

@@ -28,37 +28,37 @@ var HEROES := {
 	"warrior": {
 		"name": "Warrior", "color": Color(0.82, 0.32, 0.24),
 		"blurb": "Thrown axes that cut through 2 segments.",
-		"shot": {"sprite": "axe", "spin": 14.0, "scale": 0.9},
+		"shot": {"sprite": "axe", "spin": 14.0, "scale": 0.36},
 		"stats": {"damage": 16.0, "cooldown": 0.6, "speed": 1200.0, "pierce": 2, "size": 16.0},
 	},
 	"mage": {
 		"name": "Mage", "color": Color(0.35, 0.6, 1.0),
 		"blurb": "Slow fireballs that explode on impact.",
-		"shot": {"glow": "flame", "color": Color(1.0, 0.5, 0.15), "scale": 0.75, "spin": 6.0},
+		"shot": {"sprite": "fire", "spin": 3.0, "scale": 0.4, "halo": Color(1.0, 0.5, 0.15)},
 		"stats": {"damage": 22.0, "cooldown": 0.95, "speed": 950.0, "splash": 110.0, "size": 18.0},
 	},
 	"hunter": {
 		"name": "Hunter", "color": Color(0.45, 0.8, 0.3),
 		"blurb": "Rapid-fire arrows.",
-		"shot": {"sprite": "arrow", "orient": PI / 2, "scale": 0.75},
+		"shot": {"sprite": "arrow", "orient": PI / 2, "scale": 0.42},
 		"stats": {"damage": 6.0, "cooldown": 0.18, "speed": 1900.0, "size": 9.0},
 	},
 	"priest": {
 		"name": "Priest", "color": Color(0.98, 0.95, 0.8),
 		"blurb": "Holy bolts. Every few seconds, shoves the wyrm back.",
-		"shot": {"glow": "star", "color": Color(1.0, 0.95, 0.55), "scale": 0.55, "spin": 4.0},
+		"shot": {"sprite": "holy", "orient": PI / 4, "scale": 0.36, "halo": Color(1.0, 0.95, 0.55)},
 		"stats": {"damage": 11.0, "cooldown": 0.55, "push": 45.0, "push_interval": 7.0},
 	},
 	"rogue": {
 		"name": "Rogue", "color": Color(1.0, 0.93, 0.35),
 		"blurb": "Fans of 3 daggers with a high crit chance.",
-		"shot": {"sprite": "dagger", "orient": PI / 2, "scale": 0.75},
+		"shot": {"sprite": "dagger", "orient": PI / 2, "scale": 0.38},
 		"stats": {"damage": 6.0, "cooldown": 0.5, "count": 3, "spread": 0.22, "crit": 0.25, "size": 10.0},
 	},
 	"warlock": {
 		"name": "Warlock", "color": Color(0.65, 0.3, 0.9),
 		"blurb": "Shadow bolts that leave a burning curse.",
-		"shot": {"glow": "twirl", "color": Color(0.7, 0.3, 1.0), "scale": 0.6, "spin": 9.0},
+		"shot": {"sprite": "shadow", "spin": 7.0, "scale": 0.34, "halo": Color(0.6, 0.3, 1.0)},
 		"stats": {"damage": 7.0, "cooldown": 0.7, "dot": 8.0, "size": 14.0},
 	},
 }

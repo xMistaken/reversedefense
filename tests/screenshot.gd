@@ -53,32 +53,32 @@ func _process(_delta: float) -> void:
 
 	match _step:
 		0:
-			if _frames == 20:
+			if _frames >= 20:
 				await _shot("home")
 				_main.show_hero("warrior")
 				_next_step()
 		1:
-			if _frames == 10:
+			if _frames >= 10:
 				await _shot("hero")
 				_main.show_heroes()
 				_next_step()
 		2:
-			if _frames == 10:
+			if _frames >= 10:
 				await _shot("heroes")
 				_main.start_stage(13)
 				_next_step()
 		3:
-			if _frames == 60 * 30:
+			if _frames >= 60 * 14:
 				await _shot("circle")
 				_main.start_stage(10)
 				_next_step()
 		4:
-			if _frames == 60 * 30:
+			if _frames >= 60 * 14:
 				await _shot("wagon")
 				stage.retreat()
 				_next_step()
 		5:
-			if _frames == 10:
+			if _frames >= 10:
 				await _shot("end")
 				get_tree().quit()
 

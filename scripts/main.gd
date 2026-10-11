@@ -46,12 +46,7 @@ func _swap(node: Node) -> void:
 func show_home() -> void:
 	var s := _screen()
 	var box: VBoxContainer = s[1]
-	var head := TextureRect.new()
-	head.texture = Art.WYRM_HEADS.dragon
-	head.custom_minimum_size = Vector2(0, 240)
-	head.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	head.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	box.add_child(head)
+	box.add_child(_spacer(330))
 	box.add_child(_label("WYRMBREAKER", 96, Color(0.95, 0.75, 0.25)))
 	box.add_child(_label("Gold: %s" % Meta.fmt(Meta.gold), 48, Color(1, 0.85, 0.3)))
 	box.add_child(_label("Stages cleared: %d / %d" % [Meta.highest_cleared, Meta.STAGE_COUNT], 36, Color(0.8, 0.8, 0.8)))
@@ -289,10 +284,10 @@ func _screen(scroll := false) -> Array:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.theme = UITheme.get_theme()
 	var bg := TextureRect.new()
-	bg.texture = Art.BACKGROUNDS.crypt
+	bg.texture = Art.BACKGROUNDS.menu
 	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	bg.modulate = Color(0.75, 0.7, 0.8)
+	bg.modulate = Color(1, 1, 1) if not scroll else Color(0.45, 0.42, 0.5)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(bg)
 	var box := VBoxContainer.new()

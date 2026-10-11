@@ -96,9 +96,8 @@ func _ready() -> void:
 
 	wyrm = Wyrm.new()
 	add_child(wyrm)
-	wyrm.skin = {"head": Art.WYRM_HEADS[_theme.head], "body": _theme.body, "accent": _theme.accent}
-	if config.boss:
-		wyrm.skin.body = (_theme.body as Color).darkened(0.25)
+	wyrm.skin = Art.WYRMS[config.theme].duplicate()
+	wyrm.skin.boss = config.boss
 	var bonus_chests := Meta.bonus_skill_chests() if use_meta else 0
 	wyrm.setup(_build_track(), config.segment_types(bonus_chests), config.base_hp, config.hp_growth)
 	wyrm.base_speed = config.speed * clampf(wyrm.length / StageConfig.REFERENCE_LENGTH, 0.6, 1.4)
@@ -260,7 +259,7 @@ func hero_position(hero_id: String) -> Vector2:
 
 
 func _hero_scale() -> float:
-	return Art.HERO_SCALE * (0.82 if mode == Mode.CIRCLE and run.party.size() >= 4 else 1.0)
+	return Art.HERO_SCALE * (0.8 if mode == Mode.CIRCLE and run.party.size() >= 4 else 1.0)
 
 
 func _fire(hero_id: String) -> void:
@@ -703,12 +702,9 @@ func _update_hud() -> void:
 
 func _draw() -> void:
 	var bg: Texture2D = Art.BACKGROUNDS[config.theme]
-	var tint := Color(1, 0.7, 0.7) if config.boss else Color.WHITE
-	draw_texture_rect(bg, Rect2(Vector2.ZERO, Vector2(view.x, view.x * bg.get_height() / bg.get_width()).max(view)), false, tint)
-	if mode == Mode.CIRCLE:
-		draw_circle(center, 175.0, Color(0.05, 0.1, 0.12, 0.35))
-		draw_arc(center, 168.0, 0, TAU, 72, Color(0.5, 1.0, 0.85, 0.55), 6.0)
-		draw_arc(center, 140.0, 0, TAU, 72, Color(0.5, 1.0, 0.85, 0.3), 3.0)
+	var tint := Color(1, 0.72, 0.72) if config.boss else Color.WHITE
+	var h := view.x * bg.get_height() / bg.get_width()
+	draw_texture_rect(bg, Rect2(Vector2(0, minf(0.0, view.y - h)), Vector2(view.x, maxf(h, view.y))), false, tint)
 
 
 ## Additive layer: glows behind magic projectiles and particle effects.
@@ -717,9 +713,8 @@ func _draw_glow(c: CanvasItem) -> void:
 		Art.draw_sprite(c, Art.FX.magic, center, 2.6, _time * 0.3, Color(0.2, 0.6, 0.5, 0.35))
 	for p in _projectiles:
 		var shot: Dictionary = Data.HEROES[p.hero].shot
-		if shot.has("glow"):
-			Art.draw_sprite(c, Art.FX.glow, p.pos, shot.scale * 0.9, 0.0, shot.color * Color(1, 1, 1, 0.6))
-			Art.draw_sprite(c, Art.FX[shot.glow], p.pos, shot.scale, p.age * shot.spin, shot.color)
+		if shot.has("halo"):
+			Art.draw_sprite(c, Art.FX.glow, p.pos, 0.75, 0.0, shot.halo * Color(1, 1, 1, 0.55))
 	for e in _effects:
 		if e.additive:
 			_draw_effect(c, e)
@@ -738,14 +733,13 @@ func _draw_wall(c: CanvasItem) -> void:
 	var bar_w := 520.0
 	var bar_pos: Vector2
 	if mode == Mode.CIRCLE:
-		for i in 22:
-			var a := TAU * i / 22.0
-			Art.draw_sprite(c, Art.WALL_BLOCK, center + Vector2.from_angle(a) * WALL_RADIUS, 1.0, a + PI / 2, hit)
-		bar_pos = Vector2(center.x - bar_w / 2.0, center.y + WALL_RADIUS + 50.0)
+		var ring_scale := (WALL_RADIUS * 2.0 + 90.0) / Art.RING.get_width()
+		Art.draw_sprite(c, Art.RING, center + Vector2(0, 30), ring_scale, 0.0, hit)
+		bar_pos = Vector2(center.x - bar_w / 2.0, center.y + WALL_RADIUS + 70.0)
 	else:
 		var wall_h := Art.WALL.get_height() * view.x / Art.WALL.get_width()
-		c.draw_texture_rect(Art.WALL, Rect2(0, wall_y, view.x, wall_h), false, hit)
-		bar_pos = Vector2(view.x / 2.0 - bar_w / 2.0, wall_y + 18.0)
+		c.draw_texture_rect(Art.WALL, Rect2(0, wall_y - 70.0, view.x, wall_h), false, hit)
+		bar_pos = Vector2(view.x / 2.0 - bar_w / 2.0, wall_y - 110.0)
 	# Wall HP bar with a heart, like the reference.
 	var bar := Rect2(bar_pos, Vector2(bar_w, 30))
 	c.draw_rect(bar.grow(5), Color(0.08, 0.05, 0.1, 0.9))
@@ -764,16 +758,8 @@ func _draw_fx(c: CanvasItem) -> void:
 			c.draw_circle(center + aim_dir * (110.0 + i * 36.0), 7.0 - i * 0.6, Color(1, 0.95, 0.7, 0.6 - i * 0.07))
 	# Wagon
 	if mode == Mode.WAGON:
-		var w := 96.0 * run.party.size() + 90.0
-		var body := Rect2(Vector2(wagon_x - w / 2.0, wagon_y - 30.0), Vector2(w, 64.0))
-		c.draw_rect(body.grow(6.0), UITheme.OUTLINE)
-		c.draw_rect(body, Color(0.72, 0.45, 0.24))
-		c.draw_rect(Rect2(body.position, Vector2(w, 16.0)), Color(0.88, 0.6, 0.34))
-		for x in [body.position.x + 40.0, body.end.x - 40.0]:
-			var wheel := Vector2(x, body.end.y + 10.0)
-			c.draw_circle(wheel, 32.0, UITheme.OUTLINE)
-			c.draw_circle(wheel, 26.0, Color(0.6, 0.38, 0.2))
-			c.draw_circle(wheel, 9.0, Color(0.85, 0.85, 0.9))
+		var w := 96.0 * run.party.size() + 200.0
+		Art.draw_sprite(c, Art.WAGON, Vector2(wagon_x, wagon_y + 10.0), w / Art.WAGON.get_width())
 	# Heroes
 	var hs := _hero_scale()
 	for i in run.party.size():
@@ -787,7 +773,7 @@ func _draw_fx(c: CanvasItem) -> void:
 		if not shot.has("sprite"):
 			continue
 		var angle: float = p.age * shot.spin if shot.has("spin") else p.vel.angle() + shot.get("orient", 0.0)
-		Art.draw_sprite(c, Art.ITEMS[shot.sprite], p.pos, shot.scale, angle)
+		Art.draw_sprite(c, Art.SHOTS[shot.sprite], p.pos, shot.scale, angle)
 	for e in _effects:
 		if not e.additive:
 			_draw_effect(c, e)

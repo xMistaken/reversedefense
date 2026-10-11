@@ -11,6 +11,7 @@ var offers: Array[Dictionary] = []
 var _title: Label
 var _buttons: Array[Button] = []
 var _labels: Array[Label] = []
+var _icons: Array[TextureRect] = []
 var _refresh: Button
 
 
@@ -51,6 +52,14 @@ func _ready() -> void:
 		l.add_theme_font_size_override("font_size", 36)
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(l)
+		var icon := TextureRect.new()
+		icon.position = Vector2(14, 10)
+		icon.size = Vector2(190, 230)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(icon)
+		_icons.append(icon)
 		box.add_child(b)
 		_buttons.append(b)
 		_labels.append(l)
@@ -71,6 +80,9 @@ func show_offers(new_kind: String, new_offers: Array[Dictionary], run: RunState)
 		b.visible = i < offers.size()
 		if b.visible:
 			_labels[i].text = _describe(offers[i], run)
+			var hero_id: String = offers[i].id if kind == "hero" else Data.get_skill(offers[i].id).hero
+			_icons[i].texture = Art.HEROES.get(hero_id)
+			_labels[i].offset_left = 210 if _icons[i].texture else 24
 			var col := _color(offers[i])
 			_labels[i].add_theme_color_override("font_color", col)
 			var box := StyleBoxFlat.new()

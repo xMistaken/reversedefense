@@ -15,7 +15,7 @@ signal segment_destroyed(seg: Segment)
 signal cleared
 
 const PLATE_SPACING := 26.0   # distance between plates along the body
-const PLATE_RADIUS := 44.0    # half the body's width
+const PLATE_RADIUS := 52.0    # half the body's width
 const RADIUS := PLATE_RADIUS  # used for effect sizes
 const HEAD_GAP := 70.0        # head centre ahead of the first plate
 const ORB_PLATES := 3
@@ -23,12 +23,18 @@ const DOT_DURATION := 3.0
 const MEND_RATE := 0.05       # fraction of max HP per second healed into neighbours
 const INTRO_SPEED_MUL := 5.0
 const RETRACT_SPEED := 650.0  # how fast the front slides back to close a gap
+const BODY_HEIGHT := 215.0    # on-screen height of the painted body (incl. spikes)
+const BAND_OVERLAP := 0.35    # extra width each body slice draws, hides gaps on bends
+const HEAD_SCALE := 0.5
+const TAIL_SCALE_MUL := 1.25  # tail art scale relative to the body art
+const ORB_SCALE := 0.52
 
 ## A section of the body: several plates sharing one HP pool.
 class Segment:
 	var id := 0
 	var type := "flesh"
 	var plates := 6
+	var first_plate := 0       # index of this section's front plate in the whole body (texture slicing)
 	var hp := 1.0
 	var max_hp := 1.0
 	var armor := 0.0
@@ -88,6 +94,7 @@ func setup(track: Curve2D, types: Array[String], base_hp: float, hp_growth: floa
 	intro_distance = TrackBuilder.ENTRY + 300.0
 	segments.clear()
 	var back := -HEAD_GAP
+	var plate_count := 0
 	for i in types.size():
 		var s := Segment.new()
 		s.id = i
@@ -98,6 +105,8 @@ func setup(track: Curve2D, types: Array[String], base_hp: float, hp_growth: floa
 		s.hp = s.max_hp
 		s.armor = def.armor
 		s.offset = back
+		s.first_plate = plate_count
+		plate_count += s.plates
 		back -= s.length()
 		s.plate_pos.resize(s.plates)
 		s.plate_angle.resize(s.plates)
@@ -243,71 +252,103 @@ func _kill(seg: Segment) -> void:
 
 
 # --- Drawing ---------------------------------------------------------------
+# The body art is one painted "log" per theme. It is cut into vertical slices
+# (one per plate) and consecutive plates draw consecutive slices, so the
+# painted body bends smoothly along the path.
 
 func _draw() -> void:
 	var font := Art.FONT
+	if not segments.is_empty():
+		_draw_tail(segments[-1])
 	# Tail first so plates nearer the head overlap the ones behind them.
 	for i in range(segments.size() - 1, -1, -1):
 		var s := segments[i]
-		if s.on_track() or s.plate_visible[0]:
+		if s.plate_visible[0]:
 			_draw_section(s)
-	if head_offset >= -40.0 and not segments.is_empty():
+	if head_offset >= -60.0 and not segments.is_empty():
 		_draw_head()
 	for s in segments:
 		if s.on_track():
 			_draw_label(s, font)
 
 
-func _plate_color(s: Segment) -> Color:
-	var col: Color = skin.get("body", Color(0.8, 0.82, 0.88))
+func _section_tint(s: Segment) -> Color:
+	var col := Color.WHITE
 	match s.type:
 		"bone":
-			col = Color(0.93, 0.9, 0.8)
+			col = Color(0.78, 0.82, 0.92)
 		"mending":
-			col = col.lerp(Color(0.35, 0.9, 0.45), 0.55)
+			col = Color(0.75, 1.15, 0.75).lerp(Color.WHITE, 0.5 + 0.5 * sin(_clock * 5.0 + s.id))
 		"gilded":
-			col = Color(1.0, 0.82, 0.3)
+			col = Color(1.35, 1.1, 0.55)
+	if skin.get("boss", false):
+		col *= Color(1.0, 0.75, 0.75)
 	if s.flash > 0.0:
-		col = col.lerp(Color.WHITE, 0.7)
+		col = Color(1.9, 1.9, 1.9)
 	return col
 
 
+func _body_flip(angle: float) -> bool:
+	return absf(wrapf(angle, -PI, PI)) > PI / 2.0
+
+
 func _draw_section(s: Segment) -> void:
-	var col := _plate_color(s)
-	var accent: Color = skin.get("accent", Color(0.3, 0.85, 1.0))
-	if s.type == "mending":
-		accent = Color(0.5, 1.0, 0.5)
-	elif s.type == "gilded":
-		accent = Color(1.0, 0.95, 0.6)
-	var plate_tex: Texture2D = Art.WYRM_PLATE_BONE if s.type == "bone" else Art.WYRM_PLATE
+	var tex: Texture2D = skin.body
+	var ts := tex.get_size()
+	var sc := BODY_HEIGHT / ts.y
+	var bw := PLATE_SPACING / sc           # source width of one slice
+	var ov := bw * BAND_OVERLAP
+	var usable := ts.x - 2.0 * ov
+	var bands := maxi(1, int(usable / bw))
+	var col := _section_tint(s)
+	var flip := _body_flip(s.plate_angle[s.plates / 2])
 	for k in range(s.plates - 1, -1, -1):
 		if not s.plate_visible[k]:
 			continue
-		var a := s.plate_angle[k]
-		var flip := absf(wrapf(a, -PI, PI)) > PI / 2
-		Art.draw_sprite(self, plate_tex, s.plate_pos[k], Art.WYRM_SCALE, a, col, flip)
-		Art.draw_sprite(self, Art.WYRM_PLATE_ACCENT, s.plate_pos[k], Art.WYRM_SCALE, a, accent, flip)
+		var band := (s.first_plate + k) % bands
+		var x := ov + usable - (band + 1) * bw  # front of the body is the right of the art
+		var src := Rect2(x - ov * 0.5, 0, bw + ov, ts.y)
+		Art.draw_region(self, tex, src, s.plate_pos[k], Vector2(sc, -sc if flip else sc), s.plate_angle[k], col)
+	if s.type == "gilded" or s.type == "mending":
+		var glow := Color(1, 0.8, 0.3, 0.45) if s.type == "gilded" else Color(0.3, 1, 0.4, 0.4)
+		Art.draw_sprite(self, Art.FX.glow, s.pos, 1.2, 0.0, glow)
 	if s.dot_time > 0.0:
 		Art.draw_sprite(self, Art.FX.twirl, s.pos, 0.9, _clock * 6.0, Color(0.7, 0.25, 1.0, 0.7))
 	if s.is_orb() and s.plate_visible[1]:
 		var orb: Texture2D = Art.ORB_HERO if s.type == "hero_chest" else Art.ORB_SKILL
 		var pulse := 1.0 + 0.05 * sin(_clock * 6.0 + s.id)
-		Art.draw_sprite(self, orb, s.plate_pos[1], Art.WYRM_SCALE * pulse, 0.0, Color(1.4, 1.4, 1.4) if s.flash > 0.0 else Color.WHITE)
+		Art.draw_sprite(self, Art.FX.glow, s.plate_pos[1], 1.0 * pulse, 0.0,
+			Color(1, 0.7, 0.2, 0.5) if s.type == "hero_chest" else Color(0.3, 0.6, 1, 0.5))
+		Art.draw_sprite(self, orb, s.plate_pos[1], ORB_SCALE * pulse, 0.0, Color(1.6, 1.6, 1.6) if s.flash > 0.0 else Color.WHITE)
+
+
+func _draw_tail(last: Segment) -> void:
+	var tex: Texture2D = skin.tail
+	var body: Texture2D = skin.body
+	var sc := BODY_HEIGHT / body.get_height() * TAIL_SCALE_MUL
+	var k := last.plates - 1
+	var a := last.plate_angle[k]
+	var dir := Vector2.from_angle(a)
+	# The tail's thick right end tucks under the last plate.
+	var pos := last.plate_pos[k] - dir * (tex.get_width() * sc * 0.5 - PLATE_SPACING)
+	Art.draw_sprite(self, tex, pos, sc, a, _section_tint(last) if last.flash > 0.0 else Color.WHITE, _body_flip(a))
 
 
 func _draw_head() -> void:
 	var flip := head_dir.x < 0.0
 	var bite := 0.0
 	if at_wall():
-		bite = absf(sin(_clock * 9.0)) * 0.18
-	var head_tex: Texture2D = skin.get("head", Art.WYRM_HEADS.dragon)
-	Art.draw_sprite(self, head_tex, head_pos, Art.WYRM_SCALE * (1.0 + bite * 0.4), head_dir.angle() + (bite if not flip else -bite), Color.WHITE, flip)
+		bite = absf(sin(_clock * 9.0)) * 0.15
+	var tex: Texture2D = skin.head
+	var sc := HEAD_SCALE * (1.2 if skin.get("boss", false) else 1.0) * (1.0 + bite * 0.4)
+	var angle := head_dir.angle() + (bite if not flip else -bite)
+	Art.draw_sprite(self, tex, head_pos + head_dir * 25.0, sc, angle, Color.WHITE, flip)
 
 
 func _draw_label(s: Segment, font: Font) -> void:
 	if s.is_orb():
 		if s.hp < s.max_hp:
-			var bar := Rect2(s.pos + Vector2(-46, PLATE_RADIUS + 6), Vector2(92, 10))
+			var bar := Rect2(s.pos + Vector2(-46, PLATE_RADIUS + 10), Vector2(92, 10))
 			draw_rect(bar.grow(2), Color(0.1, 0.05, 0.05, 0.9))
 			draw_rect(Rect2(bar.position, Vector2(bar.size.x * s.hp / s.max_hp, 10)), Color(1.0, 0.3, 0.2))
 		return

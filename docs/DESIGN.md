@@ -216,11 +216,12 @@ Progress is saved automatically after every run and purchase.
   When a segment is removed, the offsets behind it are compacted.
 - **Data-driven:** heroes, skills and segment types are data tables in
   `scripts/data.gd`, so balancing is just editing numbers.
-- **Art and audio:** Kenney CC0 packs (Tiny Dungeon heroes and tiles,
-  Particle Pack effects, RPG UI, Kenney Future font, RPG and impact sounds),
-  plus original pixel-art wyrm sprites. `tools/import_assets.py` rebuilds
-  `assets/` from the downloaded packs, and `assets/CREDITS.md` lists the
-  sources.
+- **Art and audio:**
+  - Painted artwork generated with Google Gemini from sprite-sheet prompts
+    (`docs/ART_PROMPTS.md`). `tools/process_art.py` removes backgrounds and
+    cuts the sheets.
+  - The wyrm body art is sliced into thin bands drawn in order along the path.
+  - Kenney CC0 particles and sounds; Lilita One font.
 - **Business model:** offline, with no ads or in-app purchases for now
   **[ASSUMED]**.
 
