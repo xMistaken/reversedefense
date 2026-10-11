@@ -52,10 +52,12 @@ The screen is portrait (1080×1920 reference resolution).
 
 - A chain of **segments** following a path (`Path2D`), with fixed spacing
   between them.
-- Each segment has its own HP. When a segment dies, the chain behind it
-  **closes the gap**, Zuma-style, and keeps moving.
-- The wyrm moves at a steady speed. It can be slowed by skills and briefly
-  speeds up as it catches up after gaps close.
+- Each segment has its own HP. The **rearmost segment drives** the chain and
+  pushes everything ahead of it, Zuma-style. Breaking a middle segment leaves
+  a gap: the front part **stalls** until the back catches up and closes the
+  gap. Breaking segments mid-chain buys time.
+- The wyrm moves at a steady speed. It rushes in quickly at the start of a
+  stage, and skills can slow it.
 - **Head:** just the front of the chain. It has no boss HP and no special
   role.
 - **Win condition:** destroy **every** segment of the creature.
@@ -121,8 +123,8 @@ currently have.
   **[ASSUMED]**.
 - **Wyrm:** a `Path2D` with segments placed by distance along the curve.
   When a segment is removed, the offsets behind it are compacted.
-- **Data-driven:** heroes, skills and segment types are defined as Godot
-  `Resource` files, so balancing doesn't require code changes.
+- **Data-driven:** heroes, skills and segment types are data tables in
+  `scripts/data.gd`, so balancing is just editing numbers.
 - **Art:** placeholder shapes and colors first, swapped for real assets later
   **[ASSUMED]**.
 - **Business model:** offline, with no ads or in-app purchases for now
