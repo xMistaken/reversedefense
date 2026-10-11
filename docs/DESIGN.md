@@ -15,7 +15,7 @@ A huge segmented monster (a wyrm) crawls along a winding track toward your
 party. You aim, and your party fires on it, chewing through the wyrm one
 segment at a time. Some segments carry **chests**. Breaking a chest lets you
 recruit a new hero or learn a new skill, so every run builds a different party.
-Kill the whole wyrm before it reaches the end of the track.
+Destroy every segment before the wyrm reaches the end of the track.
 
 ## 2. Pillars
 
@@ -36,7 +36,7 @@ Choose starting hero ─► Stage starts ─► Wyrm advances along the track
    Meta upgrades        Break chest segment ─► Pick 1 of 3 (hero or skill)
         ▲                                   │
         │                                   ▼
-   Run ends ◄── Wyrm reaches end (lose) / Head destroyed (win)
+   Run ends ◄── Wyrm reaches end (lose) / Every segment destroyed (win)
 ```
 
 ## 4. Stage types
@@ -56,9 +56,10 @@ The screen is portrait (1080×1920 reference resolution).
   **closes the gap**, Zuma-style, and keeps moving.
 - The wyrm moves at a steady speed. It can be slowed by skills and briefly
   speeds up as it catches up after gaps close.
-- **Head:** a boss segment with exposed **weak points** that take bonus
-  damage. It's destroyed last, and destroying it wins the stage.
-- **Lose condition:** the head reaches the end of the track.
+- **Head:** just the front of the chain. It has no boss HP and no special
+  role.
+- **Win condition:** destroy **every** segment of the creature.
+- **Lose condition:** the front of the chain reaches the end of the track.
 
 ### Segment types
 
@@ -96,7 +97,7 @@ Each hero adds a basic attack to the party volley and has its own skill pool.
 | **Mage** | Area damage and control | Fireball with splash | Frost Nova (slows the whole wyrm), Arcane Barrage, Meteor |
 | **Hunter** | Sustained single target | Fast arrows | Multishot, Beast Companion (a pet that bites segments), Piercing Shot |
 | **Priest** | Support | Holy bolt | Divine Shield (pushes the wyrm back on the track), Smite Chain, Blessing (party attack speed) |
-| **Rogue** | Crits and weak points | Fan of daggers | Poisoned Blades (stacking damage over time), Ambush (bonus vs. weak points), Shadowstep Volley |
+| **Rogue** | Crits and burst | Fan of daggers | Poisoned Blades (stacking damage over time), Ambush (bonus vs. full-HP segments), Shadowstep Volley |
 | **Warlock** | Damage over time and spread | Shadow bolt | Corruption (spreads to adjacent segments), Summon Imp, Soul Drain (damage refreshes skill cooldowns) |
 
 **Party-wide skills** (available whatever heroes you have): +attack speed,
@@ -130,8 +131,7 @@ currently have.
 ## 10. Milestone 1: playable prototype
 
 - One Ritual Circle stage and one War Wagon stage
-- One wyrm with Flesh, Bone-plated, Hero Chest and Skill Chest segments, plus
-  a head with weak points
+- One wyrm with Flesh, Bone-plated, Hero Chest and Skill Chest segments
 - 3 heroes (Warrior, Mage, Hunter), each with about 3 skills, plus about 4
   party-wide skills
 - Pick-3 UI with refreshes
