@@ -88,7 +88,7 @@ func show_offers(new_kind: String, new_offers: Array[Dictionary], run: RunState)
 			var box := StyleBoxFlat.new()
 			box.bg_color = Color(0.24, 0.15, 0.11, 0.97)
 			box.border_color = col
-			box.set_border_width_all(6 if offers[i].get("rarity", "") in ["Epic", "Legendary"] else 3)
+			box.set_border_width_all(6 if offers[i].get("legendary", false) else 3)
 			box.set_corner_radius_all(14)
 			for state in ["normal", "hover", "pressed", "focus"]:
 				b.add_theme_stylebox_override(state, box)
@@ -100,28 +100,19 @@ func show_offers(new_kind: String, new_offers: Array[Dictionary], run: RunState)
 func _color(offer: Dictionary) -> Color:
 	if kind == "hero":
 		return Data.HEROES[offer.id].color
-	if offer.rarity == "Legendary":
-		return Data.LEGENDARY_COLOR
-	for r in Data.RARITIES:
-		if r.name == offer.rarity:
-			return r.color
-	return Color.WHITE
+	return Data.LEGENDARY_COLOR if offer.legendary else Data.SKILL_COLOR
 
 
-func _describe(offer: Dictionary, run: RunState) -> String:
+func _describe(offer: Dictionary, _run: RunState) -> String:
 	var id: String = offer.id
 	if kind == "hero":
 		var h: Dictionary = Data.HEROES[id]
 		return "NEW HERO: %s\n%s" % [h.name, h.blurb]
 	var s := Data.get_skill(id)
 	var owner_name: String = "Party" if s.hero == "" else Data.HEROES[s.hero].name
-	if offer.rarity == "Legendary":
+	if offer.legendary:
 		return "* LEGENDARY *  %s  [%s]\n%s" % [s.name, owner_name, s.desc]
-	var gain: int = offer.ranks
-	var rank_txt := "Rank %d/%d" % [run.rank_of(id) + gain, Data.max_rank(s)]
-	if gain > 1:
-		rank_txt = "%s +%d ranks!  %s" % [offer.rarity.to_upper(), gain, rank_txt]
-	return "%s  [%s]\n%s\n%s" % [s.name, owner_name, rank_txt, s.desc]
+	return "%s  [%s]\n%s" % [s.name, owner_name, s.desc]
 
 
 func _on_pick(i: int) -> void:

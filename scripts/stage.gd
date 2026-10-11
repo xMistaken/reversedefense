@@ -122,7 +122,7 @@ func _ready() -> void:
 		for i in Meta.head_start_skills():
 			var offers := run.skill_offers()
 			if not offers.is_empty():
-				run.take_skill(offers[0].id, 1)
+				run.take_skill(offers[0].id)
 				skills_learned += 1
 	_refresh_stats()
 
@@ -315,6 +315,12 @@ func _hit(p: Projectile, seg: Wyrm.Segment) -> void:
 		wyrm.apply_dot(seg, s.dot * s.power, s.dot_spread)
 	if s.slow > 0.0:
 		wyrm.slow_timer = maxf(wyrm.slow_timer, s.slow)
+	if s.poison_chance > 0.0 and randf() < s.poison_chance:
+		wyrm.apply_dot(seg, s.damage * s.power * 0.6, 0)
+		_add_effect("smoke", hit_pos, 0.2, 0.6, Color(0.4, 1.0, 0.3, 0.8), 0.35)
+	if s.freeze_chance > 0.0 and randf() < s.freeze_chance:
+		wyrm.freeze_timer = maxf(wyrm.freeze_timer, 1.0)
+		_add_effect("star", hit_pos, 0.3, 1.2, Color(0.6, 0.9, 1.0), 0.4, 0.0, 2.0)
 	var dealt := wyrm.damage(seg, dmg)
 	biggest_hit = maxf(biggest_hit, dealt)
 	_add_number(hit_pos, dealt, crit)
@@ -492,10 +498,10 @@ func choose(kind: String, offer: Dictionary) -> void:
 	if kind == "hero":
 		run.take_hero(offer.id)
 	else:
-		run.take_skill(offer.id, offer.ranks)
+		run.take_skill(offer.id)
 		skills_learned += 1
-		if offer.rarity in ["Epic", "Legendary"]:
-			Sfx.play("legendary", -4.0 if offer.rarity == "Legendary" else -10.0)
+		if offer.legendary:
+			Sfx.play("legendary", -4.0)
 	_pick.visible = false
 	get_tree().paused = false
 	_refresh_stats()

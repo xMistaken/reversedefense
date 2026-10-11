@@ -108,19 +108,13 @@ farming.
 - **Hero Chest:** shows **3 random heroes you don't already have**, and you
   pick one. There are no duplicates. Once all heroes are recruited, hero
   chests roll skills instead.
-- **Skill Chest:** about every 3rd segment. It shows **3 random skills**, and
-  you pick one. Each offer rolls a **rarity**:
-
-  | Rarity | Chance | Ranks gained |
-  |---|---|---|
-  | Common | 64% | +1 |
-  | Rare | 26% | +2 |
-  | Epic | 10% | +3 |
-  | **Legendary** | Always offered once unlocked | One-off, huge effect |
-
-- **Legendary skills:** each hero has one. It becomes available once that
-  hero's own skills total 6 ranks, and from then on it takes a slot in every
-  skill chest until you take it.
+- **Skill Chest:** shows **3 random skills**, and you pick one. Every skill
+  is a **single pick with one clear effect**, e.g. "Fires 2 more arrows",
+  "35% chance to poison", "Axes pierce 1 more section". There are no ranks or
+  rarities, and a taken skill leaves the pool.
+- **Legendary skills:** each hero has one. It's offered once you've taken 2
+  of that hero's skills, and it takes a slot in every skill chest until you
+  take it.
 - **Refreshes:** a shared pool for the whole run that rerolls the 3 options on
   either chest type. You start with 2, plus the Insight upgrade, and Gilded
   segments give more.
@@ -136,20 +130,21 @@ farming.
 
 ## 7. Heroes (starting roster of 6)
 
-Each hero adds a basic attack to the party volley and has 4 skills plus a
-legendary. There are also 4 party-wide skills, 34 skills in all.
+Each hero adds a basic attack to the party volley, has 4 single-pick skills
+and a legendary, and there are 6 party-wide skills, 36 in all. Extra
+projectiles are deliberately rare: at most one such skill per hero.
 
 | Class | Basic attack | Skills | Legendary |
 |---|---|---|---|
-| **Warrior** | Thrown axes that pierce 2 segments | Whirling Axes, Shield Ricochet, Execute, Heavy Axes | **Bladestorm**: +3 axes, +3 pierce, x2 damage |
-| **Mage** | Fireball with splash | Pyroblast, Frost Nova (slows the wyrm), Arcane Barrage, Ignite | **Meteor**: x2 blast radius, x3 damage |
-| **Hunter** | Rapid arrows | Multishot, Piercing Shot, Rapid Fire, Serpent Sting | **Storm of Arrows**: +4 arrows, 40% faster, bounce twice |
-| **Priest** | Holy bolt, plus a periodic shove of the wyrm | Divine Shield, Smite, Holy Nova, Blessing of Haste | **Divine Wrath**: whole party x2 damage |
-| **Rogue** | Fan of 3 daggers with high crit | Poisoned Blades, Fan of Knives, Cold Blood, Deadly Throw | **Death Mark**: +30% crit, x2 crit damage |
-| **Warlock** | Shadow bolt that curses (DoT) | Corruption (curse spreads), Shadow Volley, Agony, Soul Fire | **Plague**: x3 curse damage, spreads 2 more each side |
+| **Warrior** | Axes that pierce 2 sections | Throws 1 more axe · Axes bounce +1 · +100% dmg below 30% HP · Pierce +1 | **Bladestorm**: x2 damage, pierce +3 |
+| **Mage** | Fireball with splash | Explosions +50% · 25% chance to freeze the wyrm · Sets sections on fire · +60% damage | **Meteor**: x3 damage, x2 explosion |
+| **Hunter** | Rapid arrows | Fires 2 more arrows · Pierce +2 · 40% faster · 35% chance to poison | **Deadeye**: 2x attack speed, bounce +2 |
+| **Priest** | Holy bolt and a periodic shove | Shoves x2 · Bounce +2 · Bolts explode · Party 15% faster | **Divine Wrath**: party x2 damage |
+| **Rogue** | 2 daggers, high crit | 50% chance to poison · 1 more dagger · +30% crit · Crits +150% | **Death Mark**: +30% crit, crits x2 |
+| **Warlock** | Shadow bolt that curses | Curse spreads · Pierce +1 · Curses x2 · +80% damage | **Plague**: curses x3, spread +2 |
 
-**Party-wide skills:** Sharpened Steel (+damage), War Drums (+attack speed),
-Keen Eye (+crit), Chilling Aura (slower wyrm).
+**Party-wide skills:** +30% damage, 25% faster attacks, +15% crit, crits
++100%, 20% chance to poison, wyrm 15% slower.
 
 ## 8. Roguelite progression
 
@@ -184,12 +179,12 @@ stats, Train, Skills):
 
 | Hero | LV2 | LV3 | LV4 | LV5 | **LV6 Ultimate** |
 |---|---|---|---|---|---|
-| Warrior | +1 axe | +20% crit, +50% crit dmg | +1 bounce | All dmg +100% | **Earthshatter**: every 10s, all sections on screen take 400% |
-| Mage | +50% blast | Burn 8/s | +1 fireball | All dmg +100% | **Armageddon**: every 12s, 8 meteors for 600% each, with a blast |
-| Hunter | +2 arrows | +1 pierce | +30% speed | All dmg +100% | **Rain of Arrows**: every 8s, all sections take 250% |
+| Warrior | +40% damage | +20% crit, +50% crit dmg | +1 bounce | All dmg +100% | **Earthshatter**: every 10s, all sections on screen take 400% |
+| Mage | +50% blast | Burn 8/s | +30% blast | All dmg +100% | **Armageddon**: every 12s, 8 meteors for 600% each, with a blast |
+| Hunter | +20% crit | +1 pierce | +30% speed | All dmg +100% | **Rain of Arrows**: every 8s, all sections take 250% |
 | Priest | Shove +40px | +1 bounce | +25% speed | All dmg +100% | **Divine Judgment**: every 14s, 300% to all and repairs the wall 15% |
-| Rogue | +2 daggers | +20% crit, +55% crit dmg | Poison 6/s | All dmg +100% | **Shadow Flurry**: every 9s, 14 guaranteed-crit strikes |
-| Warlock | Curse spreads +1 | +1 bolt | Curse x2 | All dmg x2 | **Doom**: every 12s, curse everything and deal 350% |
+| Rogue | +40% damage | +20% crit, +55% crit dmg | Poison 6/s | All dmg +100% | **Shadow Flurry**: every 9s, 14 guaranteed-crit strikes |
+| Warlock | Curse spreads +1 | +40% damage | Curse x2 | All dmg x2 | **Doom**: every 12s, curse everything and deal 350% |
 
 Ultimates fire with a screen flash, a big name banner and a screen shake.
 

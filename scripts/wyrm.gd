@@ -80,6 +80,7 @@ var head_dir := Vector2.RIGHT
 var base_speed := 62.0
 var speed_mul := 1.0
 var slow_timer := 0.0
+var freeze_timer := 0.0      # the whole wyrm stops while > 0
 var finished := false
 var intro_distance := 0.0
 var damage_dealt := 0.0
@@ -169,6 +170,9 @@ func _process(delta: float) -> void:
 	if slow_timer > 0.0:
 		slow_timer -= delta
 		speed *= 0.5
+	if freeze_timer > 0.0:
+		freeze_timer -= delta
+		speed = 0.0
 	if head_offset < intro_distance:
 		speed *= INTRO_SPEED_MUL
 	else:
@@ -286,6 +290,8 @@ func _section_tint(s: Segment) -> Color:
 			col = Color(1.35, 1.1, 0.55)
 	if skin.get("boss", false):
 		col *= Color(1.0, 0.75, 0.75)
+	if freeze_timer > 0.0:
+		col *= Color(0.7, 0.9, 1.3)
 	if s.flash > 0.0:
 		col = Color(1.9, 1.9, 1.9)
 	return col

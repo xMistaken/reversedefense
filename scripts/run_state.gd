@@ -7,7 +7,7 @@ const OFFER_COUNT := 3
 const BASE_REFRESHES := 2
 
 var party: Array[String] = []
-var ranks: Dictionary = {}  # skill id -> rank
+var ranks: Dictionary = {}  # skill id -> 1 once taken (each skill is a single pick)
 var refreshes := BASE_REFRESHES
 var gold := 0.0
 var use_meta := true        # tests can run without permanent upgrades
@@ -33,12 +33,12 @@ func rank_of(skill_id: String) -> int:
 	return ranks.get(skill_id, 0)
 
 
-## Total ranks a hero has in its own skills (gates its legendary).
-func hero_ranks(hero_id: String) -> int:
+## How many of a hero's own skills have been taken (gates its legendary).
+func hero_skill_count(hero_id: String) -> int:
 	var total := 0
 	for skill in Data.SKILLS:
-		if skill.hero == hero_id and not skill.get("legendary", false):
-			total += rank_of(skill.id)
+		if skill.hero == hero_id and not skill.get("legendary", false) and rank_of(skill.id) > 0:
+			total += 1
 	return total
 
 
@@ -97,15 +97,15 @@ func hero_offers() -> Array[Dictionary]:
 func skill_available(skill: Dictionary) -> bool:
 	if skill.hero != "" and not party.has(skill.hero):
 		return false
-	if rank_of(skill.id) >= Data.max_rank(skill):
+	if rank_of(skill.id) > 0:
 		return false
-	if skill.get("legendary", false) and hero_ranks(skill.hero) < Data.LEGENDARY_REQUIRES:
+	if skill.get("legendary", false) and hero_skill_count(skill.hero) < Data.LEGENDARY_REQUIRES:
 		return false
 	return true
 
 
-## Up to 3 random skills usable by the current party and not yet maxed.
-## Unlocked legendaries are always offered. Each offer: {"id", "ranks", "rarity"}
+## Up to 3 random skills usable by the current party and not yet taken.
+## An unlocked legendary always takes one slot. Each offer: {"id", "legendary"}
 func skill_offers() -> Array[Dictionary]:
 	var legendary: Array[String] = []
 	var pool: Array[String] = []
@@ -120,27 +120,12 @@ func skill_offers() -> Array[Dictionary]:
 	pool.shuffle()
 	var out: Array[Dictionary] = []
 	for id in legendary.slice(0, 1):
-		out.append({"id": id, "ranks": 1, "rarity": "Legendary"})
+		out.append({"id": id, "legendary": true})
 	for id in pool:
 		if out.size() >= OFFER_COUNT:
 			break
-		out.append(_roll_rarity(id))
+		out.append({"id": id, "legendary": false})
 	return out
-
-
-func _roll_rarity(id: String) -> Dictionary:
-	var total := 0.0
-	for r in Data.RARITIES:
-		total += r.weight
-	var roll := randf() * total
-	var pick: Dictionary = Data.RARITIES[0]
-	for r in Data.RARITIES:
-		roll -= r.weight
-		if roll <= 0.0:
-			pick = r
-			break
-	var room := Data.max_rank(Data.get_skill(id)) - rank_of(id)
-	return {"id": id, "ranks": mini(pick.ranks, room), "rarity": pick.name}
 
 
 func take_hero(hero_id: String) -> void:
@@ -148,9 +133,8 @@ func take_hero(hero_id: String) -> void:
 		party.append(hero_id)
 
 
-func take_skill(skill_id: String, count := 1) -> void:
-	var skill := Data.get_skill(skill_id)
-	ranks[skill_id] = mini(rank_of(skill_id) + count, Data.max_rank(skill))
+func take_skill(skill_id: String) -> void:
+	ranks[skill_id] = 1
 
 
 func _apply_mod(s: Dictionary, m: Array) -> void:

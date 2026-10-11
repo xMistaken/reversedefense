@@ -19,6 +19,8 @@ var BASE_STATS := {
 	"crit_mult": 2.0,      # crit damage multiplier (raised by Ferocity)
 	"slow": 0.0,           # seconds the whole wyrm is slowed on hit
 	"execute": 0.0,        # bonus damage multiplier vs segments under 30% HP
+	"poison_chance": 0.0,  # chance a hit poisons (DoT of 60% hit damage per second)
+	"freeze_chance": 0.0,  # chance a hit freezes the whole wyrm for 1s
 	"push": 0.0,           # px the wyrm is shoved back by the hero's ability
 	"push_interval": 0.0,  # seconds between shoves (0 = no ability)
 	"size": 12.0,          # projectile radius
@@ -51,9 +53,9 @@ var HEROES := {
 	},
 	"rogue": {
 		"name": "Rogue", "color": Color(1.0, 0.93, 0.35),
-		"blurb": "Fans of 3 daggers with a high crit chance.",
+		"blurb": "Pairs of daggers with a high crit chance.",
 		"shot": {"sprite": "dagger", "orient": PI / 2, "scale": 0.38},
-		"stats": {"damage": 6.0, "cooldown": 0.5, "count": 3, "spread": 0.22, "crit": 0.25, "size": 10.0},
+		"stats": {"damage": 8.0, "cooldown": 0.45, "count": 2, "spread": 0.18, "crit": 0.25, "size": 10.0},
 	},
 	"warlock": {
 		"name": "Warlock", "color": Color(0.65, 0.3, 0.9),
@@ -71,7 +73,7 @@ var HEROES := {
 var HERO_RANKS := {
 	"warrior": [
 		{"name": "Cleaving Axes", "desc": "Thrown axes cut through 2 sections."},
-		{"name": "Twin Axes", "desc": "+1 axe per throw.", "mods": [["count", "add", 1]]},
+		{"name": "Heavy Swing", "desc": "Axes deal +40% damage.", "mods": [["damage", "mul", 1.4]]},
 		{"name": "Brutality", "desc": "Crit rate +20%, crit damage +50%.", "mods": [["crit", "add", 0.2], ["crit_mult", "mul", 1.5]]},
 		{"name": "Ricochet", "desc": "Axes bounce to 1 more section.", "mods": [["bounce", "add", 1]]},
 		{"name": "Warlord", "desc": "All damage +100%.", "mods": [["damage", "mul", 2.0]]},
@@ -81,13 +83,13 @@ var HERO_RANKS := {
 		{"name": "Fireball", "desc": "Fireballs explode, splashing nearby sections."},
 		{"name": "Inferno", "desc": "Blast radius +50%.", "mods": [["splash", "mul", 1.5]]},
 		{"name": "Ignite", "desc": "Fireballs burn for 8 damage per second.", "mods": [["dot", "add", 8.0]]},
-		{"name": "Twin Spell", "desc": "+1 fireball per cast.", "mods": [["count", "add", 1]]},
+		{"name": "Wildfire", "desc": "Fireballs explode 30% bigger.", "mods": [["splash", "mul", 1.3]]},
 		{"name": "Archmage", "desc": "All damage +100%.", "mods": [["damage", "mul", 2.0]]},
 		{"name": "ARMAGEDDON", "desc": "Every 12s, 8 meteors crash into random sections for 600% damage each, with a huge blast.", "ult": true},
 	],
 	"hunter": [
 		{"name": "Rapid Shot", "desc": "Fires arrows very quickly."},
-		{"name": "Volley", "desc": "+2 arrows per shot.", "mods": [["count", "add", 2]]},
+		{"name": "Eagle Eye", "desc": "+20% crit chance.", "mods": [["crit", "add", 0.2]]},
 		{"name": "Piercing Arrows", "desc": "Arrows pierce 1 more section.", "mods": [["pierce", "add", 1]]},
 		{"name": "Quickdraw", "desc": "Attack speed +30%.", "mods": [["cooldown", "mul", 0.77]]},
 		{"name": "Marksman", "desc": "All damage +100%.", "mods": [["damage", "mul", 2.0]]},
@@ -102,8 +104,8 @@ var HERO_RANKS := {
 		{"name": "DIVINE JUDGMENT", "desc": "Every 14s, holy light smites every section on screen for 300% damage and repairs the wall by 15%.", "ult": true},
 	],
 	"rogue": [
-		{"name": "Fan of Daggers", "desc": "Throws 3 daggers with a high crit chance."},
-		{"name": "Hidden Blades", "desc": "+2 daggers per throw.", "mods": [["count", "add", 2]]},
+		{"name": "Twin Daggers", "desc": "Throws 2 daggers with a high crit chance."},
+		{"name": "Hidden Blades", "desc": "Daggers deal +40% damage.", "mods": [["damage", "mul", 1.4]]},
 		{"name": "Assassinate", "desc": "Crit rate +20%, crit damage +55%.", "mods": [["crit", "add", 0.2], ["crit_mult", "mul", 1.55]]},
 		{"name": "Venom", "desc": "Daggers poison for 6 damage per second.", "mods": [["dot", "add", 6.0]]},
 		{"name": "Master Thief", "desc": "All damage +100%.", "mods": [["damage", "mul", 2.0]]},
@@ -112,7 +114,7 @@ var HERO_RANKS := {
 	"warlock": [
 		{"name": "Curse", "desc": "Shadow bolts leave a burning curse."},
 		{"name": "Spreading Curse", "desc": "Curses spread to 1 more section on each side.", "mods": [["dot_spread", "add", 1]]},
-		{"name": "Twin Bolts", "desc": "+1 bolt per cast.", "mods": [["count", "add", 1]]},
+		{"name": "Shadow Mastery", "desc": "Bolts deal +40% damage.", "mods": [["damage", "mul", 1.4]]},
 		{"name": "Malice", "desc": "Curse damage +100%.", "mods": [["dot", "mul", 2.0]]},
 		{"name": "Dark Lord", "desc": "All damage +100%.", "mods": [["damage", "mul", 2.0], ["dot", "mul", 2.0]]},
 		{"name": "DOOM", "desc": "Every 12s, every section on screen is cursed and takes 350% damage.", "ult": true},
@@ -129,96 +131,96 @@ var ULTIMATES := {
 	"warlock": {"interval": 12.0, "mult": 3.5, "curse": true, "color": Color(0.7, 0.3, 1.0)},
 }
 
+## In-run skills. Each is a single pick with one effect; once taken it leaves
+## the pool. target: "self" = only the owning hero, "party" = every hero,
+## "global" = run-wide value. mods: [stat, "add" | "mul", value].
 var SKILLS := [
 	# Party-wide (always offered)
 	{"id": "sharpen", "name": "Sharpened Steel", "hero": "", "target": "party",
-		"desc": "+15% damage for the whole party.", "mods": [["damage", "mul", 1.15]]},
+		"desc": "All heroes deal +30% damage.", "mods": [["damage", "mul", 1.3]]},
 	{"id": "drums", "name": "War Drums", "hero": "", "target": "party",
-		"desc": "Party attacks 12% faster.", "mods": [["cooldown", "mul", 0.88]]},
+		"desc": "All heroes attack 25% faster.", "mods": [["cooldown", "mul", 0.8]]},
 	{"id": "keen", "name": "Keen Eye", "hero": "", "target": "party",
-		"desc": "+8% crit chance for the party.", "mods": [["crit", "add", 0.08]]},
+		"desc": "+15% crit chance for all heroes.", "mods": [["crit", "add", 0.15]]},
+	{"id": "brutal", "name": "Brutal Strikes", "hero": "", "target": "party",
+		"desc": "Critical hits deal +100% damage.", "mods": [["crit_mult", "add", 1.0]]},
+	{"id": "venom", "name": "Venom Coating", "hero": "", "target": "party",
+		"desc": "All attacks have a 20% chance to poison.", "mods": [["poison_chance", "add", 0.2]]},
 	{"id": "chill", "name": "Chilling Aura", "hero": "", "target": "global",
-		"desc": "The wyrm crawls 8% slower.", "mods": [["wyrm_speed", "mul", 0.92]]},
+		"desc": "The wyrm moves 15% slower.", "mods": [["wyrm_speed", "mul", 0.85]]},
 	# Warrior
-	{"id": "whirl", "name": "Whirling Axes", "hero": "warrior", "target": "self",
-		"desc": "Warrior throws +1 axe.", "mods": [["count", "add", 1]]},
+	{"id": "twin_axes", "name": "Twin Axes", "hero": "warrior", "target": "self",
+		"desc": "Throws 1 more axe.", "mods": [["count", "add", 1]]},
 	{"id": "ricochet", "name": "Shield Ricochet", "hero": "warrior", "target": "self",
-		"desc": "Axes bounce to +1 more segment.", "mods": [["bounce", "add", 1]]},
+		"desc": "Axes bounce to 1 more section.", "mods": [["bounce", "add", 1]]},
 	{"id": "execute", "name": "Execute", "hero": "warrior", "target": "self",
-		"desc": "+60% damage to segments under 30% HP.", "mods": [["execute", "add", 0.6]]},
+		"desc": "+100% damage to sections below 30% HP.", "mods": [["execute", "add", 1.0]]},
 	{"id": "heavy_axes", "name": "Heavy Axes", "hero": "warrior", "target": "self",
-		"desc": "Axes pierce +1 segment and deal +15% damage.", "mods": [["pierce", "add", 1], ["damage", "mul", 1.15]]},
+		"desc": "Axes pierce 1 more section.", "mods": [["pierce", "add", 1]]},
 	# Mage
 	{"id": "pyroblast", "name": "Pyroblast", "hero": "mage", "target": "self",
-		"desc": "Fireballs: +25% blast radius, +20% damage.", "mods": [["splash", "mul", 1.25], ["damage", "mul", 1.2]]},
+		"desc": "Fireball explosions are 50% bigger.", "mods": [["splash", "mul", 1.5]]},
 	{"id": "frost", "name": "Frost Nova", "hero": "mage", "target": "self",
-		"desc": "Fireball hits slow the whole wyrm for 0.6s.", "mods": [["slow", "add", 0.6]]},
-	{"id": "barrage", "name": "Arcane Barrage", "hero": "mage", "target": "self",
-		"desc": "Mage casts +1 missile.", "mods": [["count", "add", 1]]},
+		"desc": "25% chance to freeze the wyrm for 1 second.", "mods": [["freeze_chance", "add", 0.25]]},
 	{"id": "ignite", "name": "Ignite", "hero": "mage", "target": "self",
-		"desc": "Fireballs burn for 5 damage/s.", "mods": [["dot", "add", 5.0]]},
+		"desc": "Fireballs set sections on fire.", "mods": [["dot", "add", 12.0]]},
+	{"id": "arcane", "name": "Arcane Power", "hero": "mage", "target": "self",
+		"desc": "Fireballs deal +60% damage.", "mods": [["damage", "mul", 1.6]]},
 	# Hunter
 	{"id": "multishot", "name": "Multishot", "hero": "hunter", "target": "self",
-		"desc": "Hunter fires +2 arrows.", "mods": [["count", "add", 2]]},
+		"desc": "Fires 2 more arrows.", "mods": [["count", "add", 2]]},
 	{"id": "piercing", "name": "Piercing Shot", "hero": "hunter", "target": "self",
-		"desc": "Arrows pierce +1 segment.", "mods": [["pierce", "add", 1]]},
+		"desc": "Arrows pierce 2 more sections.", "mods": [["pierce", "add", 2]]},
 	{"id": "rapid", "name": "Rapid Fire", "hero": "hunter", "target": "self",
-		"desc": "Hunter attacks 20% faster.", "mods": [["cooldown", "mul", 0.8]]},
+		"desc": "Attacks 40% faster.", "mods": [["cooldown", "mul", 0.6]]},
 	{"id": "sting", "name": "Serpent Sting", "hero": "hunter", "target": "self",
-		"desc": "Arrows poison for 3 damage/s.", "mods": [["dot", "add", 3.0]]},
+		"desc": "35% chance to poison.", "mods": [["poison_chance", "add", 0.35]]},
 	# Priest
 	{"id": "shield", "name": "Divine Shield", "hero": "priest", "target": "self",
-		"desc": "Shoves push +35px further and come 15% sooner.", "mods": [["push", "add", 35.0], ["push_interval", "mul", 0.85]]},
+		"desc": "Shoves push the wyrm twice as far.", "mods": [["push", "mul", 2.0]]},
 	{"id": "smite", "name": "Smite", "hero": "priest", "target": "self",
-		"desc": "Holy bolts: +40% damage and bounce once.", "mods": [["damage", "mul", 1.4], ["bounce", "add", 1]]},
+		"desc": "Holy bolts bounce to 2 more sections.", "mods": [["bounce", "add", 2]]},
 	{"id": "holy_nova", "name": "Holy Nova", "hero": "priest", "target": "self",
-		"desc": "Holy bolts burst for 70px splash.", "mods": [["splash", "add", 70.0]]},
+		"desc": "Holy bolts explode on impact.", "mods": [["splash", "add", 100.0]]},
 	{"id": "blessing", "name": "Blessing of Haste", "hero": "priest", "target": "party",
-		"desc": "Party attacks 8% faster.", "mods": [["cooldown", "mul", 0.92]]},
+		"desc": "All heroes attack 15% faster.", "mods": [["cooldown", "mul", 0.87]]},
 	# Rogue
 	{"id": "poison", "name": "Poisoned Blades", "hero": "rogue", "target": "self",
-		"desc": "Daggers poison for 4 damage/s.", "mods": [["dot", "add", 4.0]]},
+		"desc": "50% chance to poison.", "mods": [["poison_chance", "add", 0.5]]},
 	{"id": "fan", "name": "Fan of Knives", "hero": "rogue", "target": "self",
-		"desc": "Rogue throws +2 daggers.", "mods": [["count", "add", 2]]},
+		"desc": "Throws 1 more dagger.", "mods": [["count", "add", 1]]},
 	{"id": "cold_blood", "name": "Cold Blood", "hero": "rogue", "target": "self",
-		"desc": "+15% crit chance for the Rogue.", "mods": [["crit", "add", 0.15]]},
-	{"id": "deadly", "name": "Deadly Throw", "hero": "rogue", "target": "self",
-		"desc": "Daggers deal +25% damage.", "mods": [["damage", "mul", 1.25]]},
+		"desc": "+30% crit chance.", "mods": [["crit", "add", 0.3]]},
+	{"id": "backstab", "name": "Backstab", "hero": "rogue", "target": "self",
+		"desc": "Critical hits deal +150% damage.", "mods": [["crit_mult", "add", 1.5]]},
 	# Warlock
 	{"id": "corruption", "name": "Corruption", "hero": "warlock", "target": "self",
-		"desc": "Curses spread to +1 neighbouring segment each side.", "mods": [["dot_spread", "add", 1]]},
-	{"id": "volley", "name": "Shadow Volley", "hero": "warlock", "target": "self",
-		"desc": "Warlock fires +1 bolt.", "mods": [["count", "add", 1]]},
+		"desc": "Curses spread to neighbouring sections.", "mods": [["dot_spread", "add", 1]]},
+	{"id": "shadow_bolt", "name": "Shadow Lance", "hero": "warlock", "target": "self",
+		"desc": "Bolts pierce 1 more section.", "mods": [["pierce", "add", 1]]},
 	{"id": "agony", "name": "Agony", "hero": "warlock", "target": "self",
-		"desc": "Curses burn +5 damage/s.", "mods": [["dot", "add", 5.0]]},
+		"desc": "Curses deal double damage.", "mods": [["dot", "mul", 2.0]]},
 	{"id": "soul_fire", "name": "Soul Fire", "hero": "warlock", "target": "self",
-		"desc": "Shadow bolts deal +50% hit damage.", "mods": [["damage", "mul", 1.5]]},
-	# Legendaries: one per hero, offered once that hero has enough skill ranks.
+		"desc": "Bolts deal +80% damage.", "mods": [["damage", "mul", 1.8]]},
+	# Legendaries: one per hero, offered once you've taken 2 of that hero's skills.
 	{"id": "bladestorm", "name": "BLADESTORM", "hero": "warrior", "target": "self", "legendary": true,
-		"desc": "+3 axes, +3 pierce, x2 damage.", "mods": [["count", "add", 3], ["pierce", "add", 3], ["damage", "mul", 2.0]]},
+		"desc": "Axes deal double damage and pierce 3 more sections.", "mods": [["damage", "mul", 2.0], ["pierce", "add", 3]]},
 	{"id": "meteor", "name": "METEOR", "hero": "mage", "target": "self", "legendary": true,
-		"desc": "Fireballs become meteors: x2 blast radius, x3 damage.", "mods": [["splash", "mul", 2.0], ["damage", "mul", 3.0]]},
-	{"id": "volley_storm", "name": "STORM OF ARROWS", "hero": "hunter", "target": "self", "legendary": true,
-		"desc": "+4 arrows, 40% faster, arrows bounce twice.", "mods": [["count", "add", 4], ["cooldown", "mul", 0.6], ["bounce", "add", 2]]},
+		"desc": "Fireballs become meteors: triple damage, double explosion size.", "mods": [["splash", "mul", 2.0], ["damage", "mul", 3.0]]},
+	{"id": "volley_storm", "name": "DEADEYE", "hero": "hunter", "target": "self", "legendary": true,
+		"desc": "Attacks twice as fast and arrows bounce 2 more times.", "mods": [["cooldown", "mul", 0.5], ["bounce", "add", 2]]},
 	{"id": "wrath", "name": "DIVINE WRATH", "hero": "priest", "target": "party", "legendary": true,
-		"desc": "Whole party deals x2 damage. Shoves come twice as often.", "mods": [["damage", "mul", 2.0], ["push_interval", "mul", 0.5]]},
+		"desc": "All heroes deal double damage.", "mods": [["damage", "mul", 2.0]]},
 	{"id": "deathmark", "name": "DEATH MARK", "hero": "rogue", "target": "self", "legendary": true,
-		"desc": "+30% crit chance, crits deal x2 more.", "mods": [["crit", "add", 0.3], ["crit_mult", "mul", 2.0]]},
+		"desc": "+30% crit chance and crits deal double damage.", "mods": [["crit", "add", 0.3], ["crit_mult", "mul", 2.0]]},
 	{"id": "plague", "name": "PLAGUE", "hero": "warlock", "target": "self", "legendary": true,
-		"desc": "Curses burn x3 and spread to 2 more segments each side.", "mods": [["dot", "mul", 3.0], ["dot_spread", "add", 2]]},
+		"desc": "Curses deal triple damage and spread 2 sections further.", "mods": [["dot", "mul", 3.0], ["dot_spread", "add", 2]]},
 ]
 
-const SKILL_MAX_RANK := 5
-## A hero's legendary is offered once that hero's own skills total this many ranks.
-const LEGENDARY_REQUIRES := 6
-
-## Rolled for each skill offer: how many ranks it grants at once.
-var RARITIES := [
-	{"name": "Common", "ranks": 1, "weight": 64.0, "color": Color(0.85, 0.85, 0.85)},
-	{"name": "Rare", "ranks": 2, "weight": 26.0, "color": Color(0.35, 0.6, 1.0)},
-	{"name": "Epic", "ranks": 3, "weight": 10.0, "color": Color(0.75, 0.4, 1.0)},
-]
+## A hero's legendary is offered once you've taken this many of that hero's skills.
+const LEGENDARY_REQUIRES := 2
 const LEGENDARY_COLOR := Color(1.0, 0.55, 0.1)
+const SKILL_COLOR := Color(0.95, 0.92, 0.85)
 
 ## Every 10 stages the scenery and the wyrm change. `body`/`accent` tint the
 ## wyrm's plates.
@@ -239,10 +241,6 @@ var SEGMENTS := {
 	"hero_chest": {"color": Color(0.5, 0.25, 0.6), "hp_mul": 2.2, "armor": 0.0},
 	"skill_chest": {"color": Color(0.22, 0.38, 0.7), "hp_mul": 1.8, "armor": 0.0},
 }
-
-
-func max_rank(skill: Dictionary) -> int:
-	return 1 if skill.get("legendary", false) else SKILL_MAX_RANK
 
 
 func get_skill(id: String) -> Dictionary:

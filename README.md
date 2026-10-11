@@ -28,7 +28,7 @@ See [`docs/DESIGN.md`](docs/DESIGN.md) for the full design.
   unlocks a perk, and **LV6 is a screen-wide ultimate**
 - **Armory:** Might, Haste, Ferocity, Fortune, Insight, Treasure Hunter,
   Head Start, Fortify
-- **34 skills:** skill rarities (Rare = +2 ranks, Epic = +3), plus one
+- **36 single-pick skills**, each with one clear effect (no ranks), plus one
   **Legendary** per hero
 - Floating damage numbers, big-number formatting and end-of-run damage stats
 - Automatic save
