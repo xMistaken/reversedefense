@@ -25,7 +25,7 @@ sheets apart, remove the backgrounds and put everything into the game.
    `art_inbox/` folder on branch `ccr-e65e60ba-slkpod` on GitHub
    (**Add file → Upload files**).
 
-Start with prompts 1 and 2 (the wyrm). They matter most. Send them to me
+Start with prompts 1, 2 and 2b (the wyrm). They matter most. Send them to me
 first if you like, and I'll check they work before you do the rest.
 
 ---
@@ -55,6 +55,18 @@ Each piece fully separated with lots of empty space between them, plain solid wh
 
 If any piece still has a face, reply: "Remove every face, eye and mouth. These
 are plain body pieces with both ends cut flat, like logs."
+
+## Prompt 2b: Wyrm tails → `sheet2b_tails.png`
+
+```
+Use the same painting style, colors and rendering as the serpent body pieces above. This image must contain NO heads, NO faces, NO eyes, NO mouths, NO teeth and NO skulls.
+Create one image: a 2 by 2 sprite sheet of four serpent TAILS, each seen from the side and pointing LEFT: the thick end is on the right and is cut off straight and plain (where it joins the body), and the tail tapers to a sharp point on the left. Each tail is fairly short, about twice as long as it is tall, with gently curved armor scales along the top and pale belly plates along the bottom.
+Top left: fire dragon tail, dark crimson rock-like scales with glowing orange lava cracks, ending in a cluster of black spikes.
+Top right: ice drake tail, frost-white and steel-blue scales, ending in jagged blue ice crystals.
+Bottom left: undead tail, a tapering chain of ivory vertebrae wrapped in dark sinew with faint green ghost-fire, ending in a bone spike.
+Bottom right: sea serpent tail, navy and teal scales with glowing cyan lines, ending in a spined fin fluke.
+Each tail fully separated with lots of empty space between them, plain solid white background (not transparent, no checkerboard), no text, no labels, no borders, no shadows.
+```
 
 ## Prompt 3: Heroes → `sheet3_heroes.png`
 
